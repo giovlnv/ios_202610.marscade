@@ -8,6 +8,8 @@ Built with plain JavaScript, wrapped with Capacitor, compiled by GitHub Actions 
 | Game | Status |
 |---|---|
 | Catnap (cat placement puzzle) | Playable |
+| Sudoku | Playable |
+| Magic Sort | Playable |
 | Everything else | See [BACKLOG.md](BACKLOG.md) |
 
 ## Run it on your PC
@@ -19,7 +21,7 @@ npm run dev
 
 Open http://localhost:8000. To try it on the iPhone before building, open `http://<your-PC-IP>:8000` in Safari while both are on the same Wi-Fi.
 
-`npm test` checks that 120 Catnap levels each have exactly one solution.
+`npm test` checks that Catnap and Sudoku levels each have exactly one solution and that Magic Sort levels can be finished.
 
 ## Put it on the iPhone
 
@@ -40,9 +42,9 @@ Bump `version` in `package.json` before each tagged release. Your progress is ke
 src/
   index.html, css/, fonts/
   js/main.js               hub screen
-  js/core/                 storage, haptics, small UI helpers, seeded random
+  js/core/                 storage, haptics, shared game screen (shell), seeded random
   js/games/index.js        list of games shown in the hub
-  js/games/catnap/         engine (generator + solver), levels, screen
+  js/games/<game>/         engine (generator + solver), levels, screen
 assets/icon-only.png       app icon (1024×1024)
 .github/workflows/ios.yml  builds the unsigned IPA
 ```
@@ -52,23 +54,34 @@ assets/icon-only.png       app icon (1024×1024)
 1. Create `src/js/games/<id>/index.js` that exports:
    ```js
    export default {
-     id: 'sudoku',
-     name: 'Sudoku',
+     id: 'wordsearch',
+     name: 'Word Search',
      blurb: 'One line shown on the hub card.',
-     status: 'ready',
      art: '<svg>…</svg>',
+     color: 'var(--r3)',
      progress: () => 'Level 3',
      mount(root, { exit }) { /* build the screen */ return { destroy() {} }; },
    };
    ```
-2. Import it in `src/js/games/index.js` and add it to `games`.
-3. Save progress with `store.get('<id>', defaults)` and `store.set('<id>', value)`.
+2. Use `createShell` from `src/js/core/shell.js` for the top bar, rules sheet, restart and win dialog.
+3. Import the game in `src/js/games/index.js` and add it to `games`.
+4. Save progress with `store.get('<id>', defaults)` and `store.set('<id>', value)`.
 
-## Catnap difficulty
+## Difficulty
 
-- Level 1–2: easy 5×5.
-- Grid grows one size every 12 levels, up to 10×10.
-- Every 5th level is hard, every 10th is super hard, with a bigger grid.
-- Other levels are randomly easy or medium, with medium getting more common over time.
+All games: every 5th level is hard, every 10th is super hard, and the levels in between are randomly easy or medium (medium gets more common over time). Each level number always produces the same puzzle.
+
+### Catnap
+- Grid size changes every level. Easy levels stay small (5–9), super hard ones go up to 15×15, and the ranges widen as you progress.
 - Difficulty is measured by the techniques a solver needs: basic eliminations (easy), "this cell would block a whole color" (medium), groups of colors locked into the same rows or columns (hard), trying a cat and following the consequences (super hard).
-- Each level number always produces the same puzzle.
+
+### Sudoku
+- Easy: only "this is the only number that fits" steps, 34+ clues.
+- Medium: also "this number must be in this part of the box".
+- Hard: pairs and triples of candidates.
+- Super hard: X-wings or longer chains of reasoning.
+
+### Magic Sort
+- More colors as you progress (3 up to about 11).
+- Hard levels have only one empty tube. Super hard levels also have taller tubes (5 layers).
+- Every level is checked by a solver so it can always be finished.

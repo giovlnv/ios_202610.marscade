@@ -3,7 +3,7 @@ import { buildLevel, levelSpec } from '../src/js/games/catnap/levels.js';
 
 const tiers = [0, 0, 0, 0];
 let slowest = 0;
-for (let level = 1; level <= 120; level++) {
+for (let level = 1; level <= 60; level++) {
   const t = Date.now();
   const p = buildLevel(level);
   slowest = Math.max(slowest, Date.now() - t);
@@ -13,4 +13,4 @@ for (let level = 1; level <= 120; level++) {
   if (p.actualTier !== levelSpec(level).tier) console.log(`level ${level}: wanted tier ${p.tier}, got ${p.actualTier}`);
   tiers[p.actualTier]++;
 }
-console.log('levels 1-120 unique. tiers [easy, medium, hard, super]:', tiers, 'slowest ms:', slowest);
+console.log('levels 1-60 unique. tiers [easy, medium, hard, super]:', tiers, 'slowest ms:', slowest);

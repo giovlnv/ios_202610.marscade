@@ -1,20 +1,15 @@
 import { rng, hashSeed } from '../../core/rng.js';
 import { generate } from './engine.js';
 
-export const TIER_LABEL = ['Easy', 'Medium', 'Hard', 'Super hard'];
-
 export function levelSpec(level) {
   const r = rng(hashSeed('catnap-spec', level));
-  const isSuper = level % 10 === 0;
-  const isHard = !isSuper && level % 5 === 0;
-  const base = Math.min(10, 5 + Math.floor((level - 1) / 12));
-  let n, tier;
-  if (isSuper) { n = Math.min(10, base + 1); tier = 3; }
-  else if (isHard) { n = Math.min(10, base + (r() < 0.5 ? 1 : 0)); tier = 2; }
-  else {
-    n = base > 5 && r() < 0.35 ? base - 1 : base;
-    tier = level > 2 && r() < Math.min(0.7, 0.15 + level * 0.012) ? 1 : 0;
-  }
+  const ramp = Math.min(1, (level - 1) / 90);
+  let tier;
+  if (level % 10 === 0) tier = 3;
+  else if (level % 5 === 0) tier = 2;
+  else tier = level > 2 && r() < Math.min(0.7, 0.15 + level * 0.012) ? 1 : 0;
+  const [lo, hi] = [[5, 6 + 3 * ramp], [5 + ramp, 7 + 4 * ramp], [6 + 3 * ramp, 8 + 5 * ramp], [7 + 4 * ramp, 9 + 6 * ramp]][tier].map(Math.round);
+  const n = level <= 2 ? 5 : lo + r.int(hi - lo + 1);
   return { level, n, tier };
 }
 

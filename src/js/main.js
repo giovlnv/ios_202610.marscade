@@ -30,7 +30,7 @@ function hub() {
   const list = el.querySelector('.game-list');
   for (const g of games) {
     const card = h(`<button class="game-card" data-game="${g.id}">
-      <span class="game-art">${g.art}</span>
+      <span class="game-art" style="--art:${g.color}">${g.art}</span>
       <span class="game-text">
         <span class="game-name">${g.name}</span>
         <span class="game-blurb">${g.blurb}</span>

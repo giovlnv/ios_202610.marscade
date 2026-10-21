@@ -24,23 +24,57 @@ export function geometry(n, reg) {
 }
 
 export function countSolutions(n, reg, limit = 2, avoid = null) {
-  const out = [], col = new Array(n), usedC = new Uint8Array(n), usedR = new Uint8Array(n);
-  const rec = (r) => {
+  const N = n * n, out = [];
+  const rowU = new Uint8Array(n), colU = new Uint8Array(n), regU = new Uint8Array(n), block = new Uint8Array(N);
+  const houses = [];
+  for (let k = 0; k < n; k++) {
+    houses.push(Array.from({ length: n }, (_, c) => k * n + c));
+    houses.push(Array.from({ length: n }, (_, r) => r * n + k));
+  }
+  const regs = Array.from({ length: n }, () => []);
+  for (let i = 0; i < N; i++) regs[reg[i]].push(i);
+  houses.push(...regs);
+  const near = Array.from({ length: N }, (_, i) => {
+    const r = Math.floor(i / n), c = i % n, out = [];
+    for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+      const rr = r + dr, cc = c + dc;
+      if ((dr || dc) && rr >= 0 && rr < n && cc >= 0 && cc < n) out.push(rr * n + cc);
+    }
+    return out;
+  });
+  const free = (i) => !rowU[Math.floor(i / n)] && !colU[i % n] && !regU[reg[i]] && !block[i];
+  const cats = [];
+  const rec = () => {
     if (out.length >= limit) return;
-    if (r === n) {
-      if (!avoid || col.some((c, i) => c !== avoid[i])) out.push(col.slice());
+    if (cats.length === n) {
+      const col = new Array(n);
+      for (const i of cats) col[Math.floor(i / n)] = i % n;
+      if (!avoid || col.some((c, r) => c !== avoid[r])) out.push(col);
       return;
     }
-    for (let c = 0; c < n; c++) {
-      const g = reg[r * n + c];
-      if (usedC[c] || usedR[g] || (r > 0 && Math.abs(c - col[r - 1]) < 2)) continue;
-      usedC[c] = usedR[g] = 1; col[r] = c;
-      rec(r + 1);
-      usedC[c] = usedR[g] = 0;
+    let best = null, bestCount = Infinity;
+    for (const h of houses) {
+      let cnt = 0;
+      for (const i of h) if (free(i)) cnt++;
+      const r0 = Math.floor(h[0] / n), c0 = h[0] % n;
+      const done = (h === regs[reg[h[0]]] ? regU[reg[h[0]]] : h[1] === h[0] + 1 ? rowU[r0] : colU[c0]);
+      if (done) continue;
+      if (cnt < bestCount) { bestCount = cnt; best = h; if (!cnt) return; }
+    }
+    for (const i of best) {
+      if (!free(i)) continue;
+      const r = Math.floor(i / n), c = i % n, g = reg[i];
+      rowU[r] = colU[c] = regU[g] = 1;
+      for (const j of near[i]) block[j]++;
+      cats.push(i);
+      rec();
+      cats.pop();
+      for (const j of near[i]) block[j]--;
+      rowU[r] = colU[c] = regU[g] = 0;
       if (out.length >= limit) return;
     }
   };
-  rec(0);
+  rec();
   return out;
 }
 
@@ -103,6 +137,20 @@ function cellKill(geo, st) {
   if (elim.length) return { tech: 3, elim };
 }
 
+const maskCache = new Map();
+function subsetMasks(m) {
+  if (!maskCache.has(m)) {
+    const out = [], maxK = Math.min(4, m - 2);
+    for (let s = 1; s < (1 << m); s++) {
+      let k = 0;
+      for (let x = s; x; x &= x - 1) k++;
+      if (k >= 2 && k <= maxK) out.push(s);
+    }
+    maskCache.set(m, out);
+  }
+  return maskCache.get(m);
+}
+
 function subsets(geo, st) {
   const n = geo.n, kinds = [0, 1, 2];
   for (const a of kinds) for (const b of kinds) {
@@ -119,10 +167,9 @@ function subsets(geo, st) {
       for (const i of geo.houses[a * n + k]) if (st.cand[i]) mask |= 1 << (geo.houseOf[i][b] - b * n);
       return mask;
     });
-    for (let s = 1; s < (1 << m) - 1; s++) {
+    for (const s of subsetMasks(m)) {
       let set = 0, size = 0;
       for (let t = 0; t < m; t++) if (s & (1 << t)) { set |= 1 << openB[t]; size++; }
-      if (size < 2) continue;
       const inside = [];
       openA.forEach((k, idx) => { if ((maskOf[idx] & ~set) === 0) inside.push(k); });
       if (inside.length !== size) continue;
@@ -152,7 +199,7 @@ function trial(geo, st) {
     if (!st.cand[i]) continue;
     const t = cloneState(st);
     place(geo, t, i);
-    if (!propagate(geo, t, 4)) return { tech: 5, elim: [i] };
+    if (!propagate(geo, t, 3)) return { tech: 5, elim: [i] };
   }
 }
 
