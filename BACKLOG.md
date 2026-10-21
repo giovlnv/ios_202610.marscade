@@ -7,23 +7,51 @@
 - Effort covers a first playable version. Polish rounds (new themes, more levels, tweaks after playing) come on top.
 - Word games will ship in **English and Portuguese**, with a language switch.
 
-## Summary
+## Done
 
-| # | Game | Status | Effort | Sessions | Usage |
-|---|---|---|---|---|---|
-| 1 | Catnap (Meowdoku) | Done | – | 1 | Medium |
-| 2 | Sudoku | Done | – | 0.5 | Light |
-| 3 | Magic Sort | Done | – | 0.5 | Light |
-| 4 | Word Search | Done | – | 0.5 | Light |
-| 5 | Bead Sort (jewel color sort) | Done (reworked from your video) | – | 1 | Medium |
-| 6 | Block Blast + Block Endless | Done | – | 0.5 | Medium |
-| 7 | Arrow Go | Done | – | 0.5 | Medium |
-| 8 | Stamp Solitaire | Planned | Medium | 1.5 | Medium |
-| 9 | Rotate Rings | Planned | Medium–Hard | 1.5–2 | Medium–Heavy |
-| 10 | Picture Builder | Planned | Medium–Hard | 1.5–2 | Medium–Heavy |
-| 11 | Magic Tiles | Planned | Hard | 2 | Heavy |
-| 12 | Crosswords | Planned | Hard | 2–3 | Heavy |
-| 13 | Helix Jump | Planned | Hard | 2–3 | Heavy |
+Catnap, Sudoku, Magic Sort, Word Search (EN + PT), Bead Sort, Arrow Go, Block Blast, Block Endless.
+
+## Roadmap
+
+Effort per game: Easy ≈ 0.5 session, Medium ≈ 1–1.5, Hard ≈ 2–3. "Original look" means the rules can be copied but the name and characters are trademarks, so Marscade's version gets its own name and art.
+
+### Easy
+| Game | What it is | Notes |
+|---|---|---|
+| 2048 | Slide tiles to merge numbers | Original game is open source (MIT); swipe controls |
+| Minesweeper | Reveal safe cells using number clues | No-guess boards made with a solver, like Catnap |
+| Snake | Classic growing snake | Real-time; swipe or on-screen arrows |
+| Word Guess (Wordle style) | Guess a 5-letter word in 6 tries | Reuses the EN/PT word lists |
+| Reversi | Flip discs against the computer | Difficulty = how far the AI looks ahead |
+| Connect Four | Drop discs to make 4 in a row vs the computer | Same AI approach as Reversi |
+| Tents | Place a tent next to every tree | Generator + solver like Catnap |
+| Bridges (Hashi) | Connect islands with the right number of bridges | Generator + solver |
+| Nurikabe | Shade cells to form islands of given sizes | Generator + solver |
+| Kakuro | Number crossword with sums | Generator + solver |
+
+### Medium
+| Game | What it is | Notes |
+|---|---|---|
+| Nonograms (Picross) | Fill cells from row/column clues to reveal a picture | Reuses the CC0 pixel art and the 52 paintings |
+| Falling Blocks (Tetris style) | Rotate falling pieces to clear lines | Original look required |
+| Mahjong Solitaire | Match free pairs in a stacked tile layout | Tiles drawn in code; layouts generated solvable |
+| Card Solitaires | Klondike, FreeCell and Spider | Card art in code |
+| Flow | Connect same-colored dots, filling the board | Generator + uniqueness check |
+| Sokoban | Push boxes onto targets | Generated levels or a freely licensed level pack |
+| Jigsaw | Rebuild a painting from pieces | Reuses the painting archive |
+| Bubble Shooter | Aim and pop groups of 3+ colors | Aiming and wall bounces |
+| Breakout | Bounce a ball to break bricks | Real-time; brick layouts can be pixel art |
+| Stamp Solitaire | Sort stamp cards into themed albums | Category names in EN/PT |
+
+### Hard
+| Game | What it is | Notes |
+|---|---|---|
+| Maze Chase (Pac-Man style) | Eat dots in a maze while dodging 4 ghosts | Ghost AI and swipe controls; original look required |
+| Rotate Rings | Rotate interlocked rings to line up gaps and free them | Ring geometry and a solvable-level generator |
+| Picture Builder | Drag pieces onto silhouettes in pixel-art scenes | Scenes from the CC0 tiles; paintings on hard levels |
+| Magic Tiles | Tap piano tiles to the beat | Audio timing; public-domain melodies |
+| Crosswords | Classic crosswords in EN and PT | Clue databases are the hard part |
+| Helix Jump | Bounce a ball down a spinning tower | Needs a small 3D library |
 
 ## Details
 
@@ -76,27 +104,3 @@ From the App Store screenshots: interlocked C-shaped rings, each with a gap. Rot
 ## Proposals waiting for your approval
 
 Nothing pending right now.
-
-## Game ideas to consider (research, not approved)
-
-Effort uses the same scale as above. "Original look" means the rules are free to copy but the name and characters are trademarks, so Marscade's version gets its own name and art.
-
-| Idea | What it is | Effort | Notes |
-|---|---|---|---|
-| Maze Chase (Pac-Man style) | Eat dots in a maze while dodging 4 ghosts with different chase styles | Medium–Hard (1.5–2) | Real-time with swipe controls; ghost AI is the main work. Original look required. |
-| Nonograms (Picross) | Fill grid cells using row/column number clues to reveal a picture | Easy–Medium (1) | Pairs perfectly with the CC0 pixel art and the 52 paintings already in the app. |
-| 2048 | Slide tiles to merge numbers | Easy (0.5) | Original game is open source (MIT); swipe controls. |
-| Minesweeper | Reveal safe cells using number clues | Easy (0.5) | Can generate no-guess boards with a solver, like Catnap. |
-| Snake | Classic growing snake | Easy (0.5) | Real-time; swipe or on-screen arrows. |
-| Falling Blocks (Tetris style) | Rotate falling pieces to clear lines | Medium (1) | Original look required (Tetris is trademarked). |
-| Mahjong Solitaire | Match free pairs of tiles in a stacked layout | Medium (1–1.5) | Tile art drawn in code; layouts must be generated solvable. |
-| Klondike / FreeCell / Spider | Classic card solitaires | Medium (1–1.5) | Card art in code; FreeCell deals are almost always solvable. |
-| Flow (connect the dots) | Connect same-colored dots with paths that fill the board | Medium (1) | Generator + uniqueness check, similar to Catnap. |
-| Word guess (Wordle style) | Guess a 5-letter word in 6 tries | Easy (0.5) | Uses the same EN/PT word lists as Word Search. |
-| Chess puzzles | "Mate in 2"-style tactics | Medium (1) | Lichess publishes its puzzle database under CC0; needs a small chess move checker. |
-| Sokoban | Push boxes onto targets | Medium (1) | Generated levels, or a free level pack (check each pack's license). |
-| Jigsaw | Rebuild a painting from pieces | Medium (1) | Reuses the painting archive; overlaps with Picture Builder. |
-| Bubble Shooter | Aim and pop groups of 3+ colors | Medium (1–1.5) | Aiming physics and bounces. |
-| Reversi / Connect Four vs computer | Board games against a simple AI | Easy–Medium (0.5–1) | Difficulty levels = how far the AI looks ahead. |
-| Breakout | Bounce a ball to break bricks | Medium (1) | Real-time; levels could be shaped like pixel art. |
-| Logic grids (Tents, Hashi, Nurikabe, Kakuro) | More pen-and-paper logic puzzles | Easy–Medium each (0.5–1) | Same generator-plus-solver approach as Catnap and Sudoku. |
