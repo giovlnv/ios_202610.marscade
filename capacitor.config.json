@@ -1,0 +1,10 @@
+{
+  "appId": "com.marscade.app",
+  "appName": "Marscade",
+  "webDir": "www",
+  "ios": {
+    "contentInset": "never",
+    "scrollEnabled": false,
+    "backgroundColor": "#ECEEF6"
+  }
+}
