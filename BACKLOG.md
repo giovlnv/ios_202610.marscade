@@ -15,8 +15,8 @@
 | 2 | Sudoku | Done | – | 0.5 | Light |
 | 3 | Magic Sort | Done | – | 0.5 | Light |
 | 4 | Word Search | Done | – | 0.5 | Light |
-| 5 | Bead Sort (jewel color sort) | Planned | Medium | 1–1.5 | Medium |
-| 6 | Block Blast | Planned | Medium | 1 | Medium |
+| 5 | Bead Sort (jewel color sort) | Done | – | 0.5 | Medium |
+| 6 | Block Blast | Next |  Medium | 1 | Medium |
 | 7 | Arrow Go | Planned | Medium | 1 | Medium |
 | 8 | Stamp Solitaire | Planned | Medium | 1.5 | Medium |
 | 9 | Rotate Rings | Planned | Medium–Hard | 1.5–2 | Medium–Heavy |
@@ -26,12 +26,6 @@
 | 13 | Helix Jump | Planned | Hard | 2–3 | Heavy |
 
 ## Details
-
-### 5. Bead Sort (jewel color sort) · Medium
-- A pixel picture made of colored beads; tap beads to send them to trays; a full tray of one color clears.
-- Pictures generated from small pixel patterns, no artist needed.
-- Hardest part: making sure every level can be finished with the tray slots given.
-- No timer, no paid boosters.
 
 ### 6. Block Blast · Medium
 - 8×8 board, three random pieces at a time, drag to place, full rows and columns clear.
@@ -58,7 +52,8 @@ From the App Store screenshots: interlocked C-shaped rings, each with a gap. Rot
 
 ### 10. Picture Builder · Medium–Hard
 - A scene with dark silhouettes; drag the matching piece from the tray onto its silhouette.
-- Simple art built from flat shapes drawn in code.
+- Hard and super hard levels: the public-domain paintings, cut into pixel pieces you drag back into place.
+- Art: the same free CC0 Dungeon Crawl pixel tile set used by Bead Sort (objects, furniture, trees, animals), so scenes are real pixel art. Other CC0 packs (e.g. Kenney) can be added if needed.
 - Main cost is making enough scenes; each new scene is ongoing art work.
 - No energy or timers.
 
@@ -84,6 +79,8 @@ From the App Store screenshots: interlocked C-shaped rings, each with a gap. Rot
 - Hub settings: vibration, appearance, word-game language
 - Per-game stats: solved per difficulty, best streak without hints
 - 3 lives per level in every game; Catnap cats are final
+- One-tap Restart button with a label (keeps remaining lives)
+- Bead Sort pictures from free pixel art (CC0) and public-domain paintings on hard levels
 
 ## Proposals waiting for your approval
 

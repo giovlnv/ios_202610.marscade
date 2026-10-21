@@ -8,7 +8,7 @@
   --bg: #ECEEF6; --surface: #FFFFFF; --sunk: #E1E4F0; --ink: #2A2440; --muted: #6C6784;
   --rust: #C9573F; --rust-deep: #A3412D; --haze: #8DA3D3; --line: #D6D9E7; --danger: #D33D4C;
   --edge: #3A3352; --thin: rgba(42, 36, 64, .13); --x-ink: rgba(42, 36, 64, .55);
-  --user-ink: #3F5FA8; --cat-fur: #FFFDF9; --cat-ink: #2A2440; --cat-ear: #F19BA8;
+  --user-ink: #3F5FA8; --bead-k: #3D3550; --cat-fur: #FFFDF9; --cat-ink: #2A2440; --cat-ear: #F19BA8;
   --p0: #DA746F; --p1: #A9D58C; --p2: #A3BAD3; --p3: #977BD5; --p4: #F7A96A;
   --p5: #E785B6; --p6: #F7B9D3; --p7: #47B1AA; --p8: #69BCE6; --p9: #E3BC48;
   --p10: #8F9D5C; --p11: #C69A79; --p12: #BBAEEC; --p13: #86D8C5; --p14: #D9DE7A;
@@ -24,7 +24,7 @@
     --bg: #15131E; --surface: #211D2C; --sunk: #1B1825; --ink: #F0EDF8; --muted: #A49EBB;
     --rust: #E06E55; --rust-deep: #B44F3A; --haze: #6F86BE; --line: #332F45; --danger: #FF6B78;
     --edge: #4B4563; --thin: rgba(16, 14, 23, .28); --x-ink: rgba(20, 17, 30, .6);
-    --user-ink: #A9BEF0; --cat-fur: #FFF8F0; --cat-ink: #241F33; --cat-ear: #E98B9A;
+    --user-ink: #A9BEF0; --bead-k: #7A7298; --cat-fur: #FFF8F0; --cat-ink: #241F33; --cat-ear: #E98B9A;
     --r0: color-mix(in srgb, var(--p0) 82%, #15131E); --r1: color-mix(in srgb, var(--p1) 82%, #15131E); --r2: color-mix(in srgb, var(--p2) 82%, #15131E); --r3: color-mix(in srgb, var(--p3) 82%, #15131E); --r4: color-mix(in srgb, var(--p4) 82%, #15131E); --r5: color-mix(in srgb, var(--p5) 82%, #15131E); --r6: color-mix(in srgb, var(--p6) 82%, #15131E); --r7: color-mix(in srgb, var(--p7) 82%, #15131E); --r8: color-mix(in srgb, var(--p8) 82%, #15131E); --r9: color-mix(in srgb, var(--p9) 82%, #15131E); --r10: color-mix(in srgb, var(--p10) 82%, #15131E); --r11: color-mix(in srgb, var(--p11) 82%, #15131E); --r12: color-mix(in srgb, var(--p12) 82%, #15131E); --r13: color-mix(in srgb, var(--p13) 82%, #15131E); --r14: color-mix(in srgb, var(--p14) 82%, #15131E); 
     color-scheme: dark;
   }
@@ -33,7 +33,7 @@
   --bg: #15131E; --surface: #211D2C; --sunk: #1B1825; --ink: #F0EDF8; --muted: #A49EBB;
   --rust: #E06E55; --rust-deep: #B44F3A; --haze: #6F86BE; --line: #332F45; --danger: #FF6B78;
   --edge: #4B4563; --thin: rgba(16, 14, 23, .28); --x-ink: rgba(20, 17, 30, .6);
-  --user-ink: #A9BEF0; --cat-fur: #FFF8F0; --cat-ink: #241F33; --cat-ear: #E98B9A;
+  --user-ink: #A9BEF0; --bead-k: #7A7298; --cat-fur: #FFF8F0; --cat-ink: #241F33; --cat-ear: #E98B9A;
   --r0: color-mix(in srgb, var(--p0) 82%, #15131E); --r1: color-mix(in srgb, var(--p1) 82%, #15131E); --r2: color-mix(in srgb, var(--p2) 82%, #15131E); --r3: color-mix(in srgb, var(--p3) 82%, #15131E); --r4: color-mix(in srgb, var(--p4) 82%, #15131E); --r5: color-mix(in srgb, var(--p5) 82%, #15131E); --r6: color-mix(in srgb, var(--p6) 82%, #15131E); --r7: color-mix(in srgb, var(--p7) 82%, #15131E); --r8: color-mix(in srgb, var(--p8) 82%, #15131E); --r9: color-mix(in srgb, var(--p9) 82%, #15131E); --r10: color-mix(in srgb, var(--p10) 82%, #15131E); --r11: color-mix(in srgb, var(--p11) 82%, #15131E); --r12: color-mix(in srgb, var(--p12) 82%, #15131E); --r13: color-mix(in srgb, var(--p13) 82%, #15131E); --r14: color-mix(in srgb, var(--p14) 82%, #15131E); 
   color-scheme: dark;
 }
@@ -111,7 +111,7 @@ svg { display: block; width: 100%; height: 100%; }
 .lives svg.lost { color: var(--line); transform: scale(.85); }
 .lives.shake { animation: shake .4s ease; }
 .lost-art { width: 64px; height: 64px; color: var(--line); }
-.tier { font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; padding: 3px 10px; border-radius: 99px; background: var(--sunk); color: var(--muted); }
+.tier { white-space: nowrap; font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; padding: 3px 10px; border-radius: 99px; background: var(--sunk); color: var(--muted); }
 .tier[data-tier="1"] { color: #2E7D6B; background: color-mix(in srgb, #2E7D6B 14%, transparent); }
 .tier[data-tier="2"] { color: var(--rust); background: color-mix(in srgb, var(--rust) 14%, transparent); }
 .tier[data-tier="3"] { color: #fff; background: var(--rust); }
@@ -237,6 +237,27 @@ svg { display: block; width: 100%; height: 100%; }
 .ws-words li.got { background: transparent; box-shadow: none; color: var(--muted); text-decoration: line-through; }
 .ws-tools { display: flex; justify-content: center; }
 .ws-tools .tool { flex-direction: row; padding-inline: 20px; font-size: .88rem; }
+
+/* Bead Sort */
+.bead-board {
+  --size: min(100%, 520px, calc(100dvh - 400px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)));
+  width: min(var(--size), var(--size) * var(--w) / var(--h)); max-width: 100%; aspect-ratio: var(--w) / var(--h);
+  display: grid; grid-template-columns: repeat(var(--w), 1fr); grid-template-rows: repeat(var(--h), 1fr); gap: 2px;
+}
+.bead {
+  border-radius: 50%; transition: transform .15s ease, opacity .15s ease;
+  box-shadow: inset -1.5px -2px 0 rgba(0, 0, 0, .18), inset 1.5px 1.5px 0 rgba(255, 255, 255, .35);
+}
+.bead.gone { visibility: hidden; }
+.bead.deep { filter: saturate(.7) brightness(.92); transform: scale(.84); }
+.bead.miss { animation: shake .4s ease; outline: 2.5px solid var(--danger); outline-offset: 1px; }
+.bead-wrap { display: grid; justify-items: center; gap: 10px; width: 100%; }
+.bead-wrap .ws-theme { text-align: center; line-height: 1.15; }
+.bead-wrap .ws-theme small { display: block; font-family: var(--body); font-weight: 800; font-size: .78rem; color: var(--muted); margin-top: 2px; }
+.trays { display: flex; justify-content: center; gap: 14px; }
+.tray { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; padding: 9px; border-radius: 16px; background: var(--surface); box-shadow: 0 1px 0 var(--line); }
+.tray.cleared { animation: pop .35s ease-out; }
+.slot { width: 17px; height: 17px; border-radius: 50%; background: var(--sunk); box-shadow: inset 0 1px 2px rgba(0, 0, 0, .12); }
 
 /* Sheets and dialogs */
 .sheet-backdrop, .win-backdrop {

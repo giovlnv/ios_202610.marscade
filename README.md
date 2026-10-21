@@ -11,6 +11,7 @@ Built with plain JavaScript, wrapped with Capacitor, compiled by GitHub Actions 
 | Sudoku | Playable |
 | Magic Sort | Playable |
 | Word Search (English and Portuguese) | Playable |
+| Bead Sort | Playable |
 | Everything else | See [BACKLOG.md](BACKLOG.md) |
 
 ## Run it on your PC
@@ -22,7 +23,7 @@ npm run dev
 
 Open http://localhost:8000. To try it on the iPhone before building, open `http://<your-PC-IP>:8000` in Safari while both are on the same Wi-Fi.
 
-`npm test` checks that Catnap and Sudoku levels each have exactly one solution, that Magic Sort levels can be finished, and that Word Search levels build in both languages.
+`npm test` checks that Catnap and Sudoku levels each have exactly one solution, that Magic Sort levels can be finished, that Word Search levels build in both languages, and that Bead Sort levels can be cleared.
 
 ## Put it on the iPhone
 
@@ -75,6 +76,8 @@ assets/icon-only.png       app icon (1024×1024)
   - Sudoku: entering a wrong number (right numbers are final; notes are free).
   - Magic Sort: a pour that leaves no way to finish (it is taken back).
   - Word Search: selecting 3 or more letters that aren't a word.
+  - Bead Sort: tapping a bead when no tray can take it.
+- Restart (top right) clears the board in one tap but keeps your remaining lives.
 - Hints are unlimited and never cost lives, but they reset your "streak without hints" in Stats.
 - Settings on the home screen: vibration, light/dark/auto appearance, and word-game language.
 
@@ -103,3 +106,9 @@ All games: every 5th level is hard, every 10th is super hard, and the levels in 
 - 12 themes per language, words placed with overlaps.
 - Easy: across and down only. Medium: adds diagonals. Hard: any direction, including backwards. Super hard: also scatters partial "decoy" words.
 - Grids grow from 7×7 to about 14×14.
+
+### Bead Sort
+- Easy and medium levels use pixel art from the free CC0 Dungeon Crawl tile set (animals, food, potions, trinkets, trees), with 3, 2 or 1 trays.
+- Hard and super hard levels use famous public-domain paintings (Starry Night, The Great Wave, Mona Lisa, The Scream, Monet…) with fewer trays.
+- Difficulty is measured by how often random tapping would still finish the level; every level stores a known solution, which the hint follows.
+- Sources and licenses are in [CREDITS.md](CREDITS.md). To rebuild the pictures: `python3 tools/build_bead_art.py <CC0-Dungeon-Pack folder>` and `python3 tools/build_painting_art.py <paintings folder>`.
