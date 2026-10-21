@@ -13,7 +13,7 @@ Built with plain JavaScript, wrapped with Capacitor, compiled by GitHub Actions 
 | Word Search (English and Portuguese) | Playable |
 | Bead Sort | Playable |
 | Arrow Go | Playable |
-| Block Blast | Playable |
+| Block Blast (levels) and Block Endless (best score) | Playable |
 | Everything else | See [BACKLOG.md](BACKLOG.md) |
 
 ## Run it on your PC
@@ -128,3 +128,4 @@ All games: every 5th level is hard, every 10th is super hard, and the levels in 
 - Multi-line clears and clears on consecutive turns score extra.
 - Harder levels start with grey stones on the board, deal bigger and awkward pieces, and no longer guarantee that a dealt piece fits.
 - Hint: Show a spot highlights a good placement.
+- Block Endless is a separate card on the home screen: no target and no lives, play until the board fills up; your best score is saved. Pieces get harder as your score grows.

@@ -21,8 +21,8 @@ const rules = `<ul class="rules">
 </ul>
 <p class="sheet-note">Pieces can't be rotated. Grey stones on harder levels clear like any other block.</p>`;
 
-const load = () => ({ level: 1, game: null, solved: 0, lives: LIVES, ...store.get('blockblast', {}) });
-const save = (s) => store.set('blockblast', s);
+const keyOf = (endless) => (endless ? 'blockendless' : 'blockblast');
+const load = (endless) => ({ level: 1, game: null, solved: 0, best: 0, lives: LIVES, ...store.get(keyOf(endless), {}) });
 
 export default {
   id: 'blockblast',
@@ -30,28 +30,46 @@ export default {
   blurb: 'Fit blocks on an 8×8 board, clear lines and reach the target score.',
   art,
   color: 'var(--r3)',
-  progress: () => `Level ${load().level}`,
-  mount,
+  progress: () => `Level ${load(false).level}`,
+  mount: (root, ctx) => mount(root, ctx, false),
 };
 
-function mount(root, { exit }) {
-  const saved = load();
+export const endless = {
+  id: 'blockendless',
+  name: 'Block Endless',
+  blurb: 'The same blocks with no target: play until the board fills up and beat your best.',
+  art,
+  color: 'var(--r9)',
+  progress: () => `Best ${Math.floor(load(true).best)}`,
+  mount: (root, ctx) => mount(root, ctx, true),
+};
+
+function mount(root, { exit }, isEndless) {
+  const saved = load(isEndless);
+  const save = (s) => store.set(keyOf(isEndless), s);
+  const endlessSpec = (game) => {
+    const tier = Math.min(3, Math.floor((game?.score || 0) / 400));
+    return { tier, target: Infinity, stones: 0, guarantee: tier < 2, seed: game?.seed ?? Date.now() % 1e9 };
+  };
   let spec, g, cells = [], drag = null;
 
   const fresh = () => {
+    if (isEndless) spec = endlessSpec(null);
     const board = obstacles(spec.seed + 1, spec.stones);
-    const game = { board, score: 0, streak: 0, deals: 0, pieces: [], colors: [] };
+    const game = { board, score: 0, streak: 0, deals: 0, pieces: [], colors: [], seed: spec.seed };
     dealInto(game, false);
     return game;
   };
   function dealInto(game, rescue) {
+    if (isEndless) spec = endlessSpec(game);
     const r = rng(spec.seed + ++game.deals * 7919);
     game.pieces = deal(r, game.board, rescue ? 0 : spec.tier, rescue || spec.guarantee);
     game.colors = game.pieces.map((_, k) => COLORS[(game.deals * 3 + k) % COLORS.length]);
   }
 
   const shell = createShell(root, {
-    name: 'Block Blast',
+    name: isEndless ? 'Block Endless' : 'Block Blast',
+    lives: !isEndless,
     rules,
     winArt: `<div class="win-icon">${art}</div>`,
     onBack: exit,
@@ -74,12 +92,21 @@ function mount(root, { exit }) {
 
   function startLevel() {
     shell.hideWin();
-    spec = levelSpec(saved.level);
-    shell.setLevel(saved.level);
-    shell.setTier(spec.tier);
-    shell.setLives(saved.lives);
-    g = saved.game?.level === saved.level ? saved.game : fresh();
-    wrap.querySelector('.bb-score i').textContent = spec.target;
+    if (isEndless) {
+      g = saved.game || fresh();
+      spec = endlessSpec(g);
+      shell.el.querySelector('.lvl').innerHTML = `Best <b>${Math.floor(saved.best)}</b>`;
+      shell.el.querySelector('.tier').hidden = true;
+      wrap.querySelector('.bb-score span').textContent = 'points';
+      wrap.querySelector('.bead-progress').hidden = true;
+    } else {
+      spec = levelSpec(saved.level);
+      shell.setLevel(saved.level);
+      shell.setTier(spec.tier);
+      shell.setLives(saved.lives);
+      g = saved.game?.level === saved.level ? saved.game : fresh();
+      wrap.querySelector('.bb-score i').textContent = spec.target;
+    }
     wrap.hidden = false;
     render();
     if (!saved.seenRules) shell.openRules();
@@ -130,6 +157,7 @@ function mount(root, { exit }) {
     render(res.cleared);
     if (g.score >= spec.target) return win();
     if (!g.pieces.some((p) => p >= 0 && spots(g.board, SHAPES[p]).length)) {
+      if (isEndless) return gameOver();
       saved.lives -= 1;
       save(saved);
       shell.loseLife(saved.lives);
@@ -138,6 +166,16 @@ function mount(root, { exit }) {
         setTimeout(() => { toast('Out of room. Here are three new pieces'); render(); }, 600);
       }
     }
+  }
+
+  function gameOver() {
+    const score = Math.floor(g.score), record = score > saved.best;
+    saved.best = Math.max(saved.best, score);
+    saved.game = null;
+    save(saved);
+    haptic.win();
+    shell.el.querySelector('.lvl').innerHTML = `Best <b>${Math.floor(saved.best)}</b>`;
+    setTimeout(() => shell.showLost(record ? 'New best score' : 'Out of room', `You scored ${score} points. Best: ${Math.floor(saved.best)}.`), 500);
   }
 
   function hint() {
