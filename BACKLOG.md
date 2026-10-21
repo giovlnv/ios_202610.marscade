@@ -15,7 +15,7 @@
 | 2 | Sudoku | Done | – | 0.5 | Light |
 | 3 | Magic Sort | Done | – | 0.5 | Light |
 | 4 | Word Search | Done | – | 0.5 | Light |
-| 5 | Bead Sort (jewel color sort) | Rework pending (waiting for gameplay video) | – | 0.5 | Medium |
+| 5 | Bead Sort (jewel color sort) | Done (reworked from your video) | – | 1 | Medium |
 | 6 | Block Blast | Next | Medium | 1 | Medium |
 | 7 | Arrow Go | Done | – | 0.5 | Medium |
 | 8 | Stamp Solitaire | Planned | Medium | 1.5 | Medium |
@@ -70,7 +70,6 @@ From the App Store screenshots: interlocked C-shaped rings, each with a gap. Rot
 
 ## In progress
 
-- Bead Sort rework: you pick which beads go on the trays, then place them into the picture; the level ends when the picture is complete. Waiting for your video of the original before building.
 - Painting archive (~50 public-domain works) for Bead Sort and Picture Builder hard levels: The Great Wave, The Kiss, more van Gogh and Leonardo. Free sources found so far cover about 12 works.
 
 ## Approved and built

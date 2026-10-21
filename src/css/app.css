@@ -240,7 +240,7 @@ svg { display: block; width: 100%; height: 100%; }
 
 /* Bead Sort */
 .bead-board {
-  --size: min(100%, 520px, calc(100dvh - 400px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)));
+  --size: min(100%, 520px, calc(100dvh - 460px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)));
   width: min(var(--size), var(--size) * var(--w) / var(--h)); max-width: 100%; aspect-ratio: var(--w) / var(--h);
   display: grid; grid-template-columns: repeat(var(--w), 1fr); grid-template-rows: repeat(var(--h), 1fr); gap: 2px;
 }
@@ -248,16 +248,23 @@ svg { display: block; width: 100%; height: 100%; }
   border-radius: 50%; transition: transform .15s ease, opacity .15s ease;
   box-shadow: inset -1.5px -2px 0 rgba(0, 0, 0, .18), inset 1.5px 1.5px 0 rgba(255, 255, 255, .35);
 }
-.bead.gone { visibility: hidden; }
-.bead.deep { filter: saturate(.7) brightness(.92); transform: scale(.84); }
-.bead.miss { animation: shake .4s ease; outline: 2.5px solid var(--danger); outline-offset: 1px; }
+.bead.off { visibility: hidden; }
+.bead.hole { background: transparent; box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--goal) 70%, transparent); opacity: .8; }
+.bead.placed { animation: pop .3s ease-out; }
+.bead.returned { animation: shake .4s ease; outline: 2px solid var(--danger); outline-offset: 1px; }
+.bead-head { display: flex; align-items: center; gap: 10px; max-width: 100%; }
+.bead-goal { width: 46px; height: 46px; flex: none; padding: 4px; border-radius: 10px; background: var(--surface); box-shadow: 0 1px 0 var(--line); }
+.bead-head .ws-theme { text-align: left; }
+.bead-progress { display: flex; align-items: center; gap: 8px; width: min(100%, 320px); }
+.bead-progress span { flex: 1; height: 6px; border-radius: 99px; background: linear-gradient(var(--rust), var(--rust)) no-repeat left / var(--w, 0%) 100%, var(--sunk); }
+.bead-progress b { font-size: .8rem; color: var(--muted); font-variant-numeric: tabular-nums; min-width: 3ch; }
 .bead-wrap { display: grid; justify-items: center; gap: 10px; width: 100%; }
-.bead-wrap .ws-theme { text-align: center; line-height: 1.15; }
+.bead-wrap .ws-theme { line-height: 1.15; }
 .bead-wrap .ws-theme small { display: block; font-family: var(--body); font-weight: 800; font-size: .78rem; color: var(--muted); margin-top: 2px; }
 .trays { display: flex; justify-content: center; gap: 14px; }
 .tray { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; padding: 9px; border-radius: 16px; background: var(--surface); box-shadow: 0 1px 0 var(--line); }
 .tray.cleared { animation: pop .35s ease-out; }
-.slot { width: 17px; height: 17px; border-radius: 50%; background: var(--sunk); box-shadow: inset 0 1px 2px rgba(0, 0, 0, .12); }
+.slot { width: 15px; height: 15px; border-radius: 50%; background: var(--sunk); box-shadow: inset 0 1px 2px rgba(0, 0, 0, .12); }
 
 /* Arrow Go */
 .ag-board {
