@@ -112,7 +112,7 @@ All games: every 5th level is hard, every 10th is super hard, and the levels in 
 ### Bead Sort
 - The picture starts scrambled; a small preview shows the finished picture. Tap a wrong bead to lift it into the trays (any colors). Whenever an empty spot matches a bead in the trays, that bead jumps in. The level is done when the picture is complete.
 - Mistake: filling every tray slot with beads that fit nowhere. The beads go back to the picture and you lose a life.
-- Easy and medium levels: pixel art from the free CC0 Dungeon Crawl tile set. Hard and super hard: public-domain paintings with only one tray.
+- Easy and medium levels: pixel art from the free CC0 Dungeon Crawl tile set. Hard and super hard: an archive of 52 public-domain paintings (van Gogh, Leonardo, Klimt, Hokusai, Vermeer, Monet, Bruegel, Botticelli…) with only one tray.
 - Difficulty is measured by how often random lifting would jam the trays; every level is checked to be finishable.
 - Sources and licenses are in [CREDITS.md](CREDITS.md). To rebuild the pictures: `python3 tools/build_bead_art.py <CC0-Dungeon-Pack folder>` and `python3 tools/build_painting_art.py <paintings folder>`.
 

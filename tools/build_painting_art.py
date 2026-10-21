@@ -1,26 +1,24 @@
 """Turn public-domain paintings into bead pictures for hard levels.
 
-Usage: python3 tools/build_painting_art.py <folder with the image files>
-All works below are by artists who died more than 100 years before 2026 (or over 70 years, for Munch),
-and the files are photographs of 2D public-domain artworks.
+Usage: python3 tools/build_painting_art.py <folder with <slug>.jpg files and sources.json>
+Images and metadata: https://github.com/Kyando/behind-the-words (art/thumbs, art/sources.json),
+originally from Wikimedia Commons. Birth of Venus: https://github.com/mufaddalkt/artgallery.
 """
-import json, os, sys
+import json, os, re, sys
 from collections import Counter
 from PIL import Image, ImageEnhance
 
-WORKS = {
-    'starry_night.jpg': ('The Starry Night', 'Vincent van Gogh', 1889),
-    'great_wave.jpg': ('The Great Wave off Kanagawa', 'Katsushika Hokusai', 1831),
-    'the_scream.jpg': ('The Scream', 'Edvard Munch', 1893),
-    'the_shipwreck_of_the_minotaur.jpg': ('The Wreck of a Transport Ship', 'J. M. W. Turner', 1810),
-    'Da_Vinci_Mona_Lisa.jpg': ('Mona Lisa', 'Leonardo da Vinci', 1503),
-    'Claude_Monet_Cathedral_Rouen.jpg': ('Rouen Cathedral', 'Claude Monet', 1894),
-    'background_Claude_Monet_Poppy_Field_near_Giverny.jpg': ('Poppy Field near Giverny', 'Claude Monet', 1885),
-    'background_Claude_Monet_Spring_in_Giverny_1890.jpg': ('Spring in Giverny', 'Claude Monet', 1890),
-    'painting_Monet_Garden_at_Giverny_1.jpg': ('The Artist’s Garden at Giverny', 'Claude Monet', 1900),
-}
-OUT = os.path.join(os.path.dirname(__file__), '..', 'src', 'js', 'games', 'beadsort', 'paintings.json')
+ROOT = os.path.join(os.path.dirname(__file__), '..')
+OUT = os.path.join(ROOT, 'src', 'js', 'games', 'beadsort', 'paintings.json')
+CREDITS = os.path.join(ROOT, 'CREDITS.md')
 MAX_SIDE, COLORS, MIN_COUNT = 24, 9, 9
+EXTRA = {
+    'birth-of-venus-botticelli': {
+        'title': 'The Birth of Venus', 'artist': 'Sandro Botticelli', 'year': 'c. 1485',
+        'page': 'https://commons.wikimedia.org/wiki/File:Sandro_Botticelli_-_La_nascita_di_Venere_-_Google_Art_Project_-_edited.jpg',
+    },
+}
+ARTISTS = {'gogh': 'Vincent van Gogh', 'vinci': 'Leonardo da Vinci', 'elder': 'Pieter Bruegel the Elder'}
 
 
 def convert(path):
@@ -50,14 +48,32 @@ def convert(path):
     }
 
 
+def meta(slug, sources):
+    if slug in EXTRA:
+        return EXTRA[slug]
+    m = sources[slug]
+    artist = ARTISTS.get(slug.rsplit('-', 1)[-1], m['artist'])
+    return {'title': m['title'], 'artist': artist, 'year': m['year'], 'page': m.get('sourcePage') or m.get('page')}
+
+
 def main(folder):
-    out = {}
-    for f, (title, artist, year) in WORKS.items():
+    sources = json.load(open(os.path.join(folder, 'sources.json')))
+    out, lines = {}, []
+    for f in sorted(os.listdir(folder)):
+        if not f.endswith('.jpg'):
+            continue
+        slug = f[:-4]
+        info = meta(slug, sources)
         art = convert(os.path.join(folder, f))
-        art.update(title=title, artist=artist, year=year)
-        out[f'painting/{os.path.splitext(f)[0]}'] = art
+        art.update(title=info['title'], artist=info['artist'], year=info['year'])
+        out[f'painting/{slug}'] = art
+        lines.append(f"- {info['title']}, {info['artist']}, {info['year']}. [Source]({info['page']})")
     with open(OUT, 'w') as fh:
         json.dump(out, fh, separators=(',', ':'), ensure_ascii=False)
+    text = open(CREDITS).read()
+    block = '<!-- paintings -->\n' + '\n'.join(lines) + '\n<!-- /paintings -->'
+    text = re.sub(r'<!-- paintings -->.*?<!-- /paintings -->', lambda _: block, text, flags=re.S)
+    open(CREDITS, 'w').write(text)
     print(len(out), 'paintings written to', os.path.normpath(OUT))
 
 

@@ -68,10 +68,6 @@ From the App Store screenshots: interlocked C-shaped rings, each with a gap. Rot
 - Ball bouncing down a spinning tower; drag to rotate.
 - Needs a small 3D library bundled for offline use, simple physics, smooth 60 fps.
 
-## In progress
-
-- Painting archive (~50 public-domain works) for Bead Sort and Picture Builder hard levels: The Great Wave, The Kiss, more van Gogh and Leonardo. Free sources found so far cover about 12 works.
-
 ## Approved and built
 
 - Sudoku "Auto notes"
@@ -80,7 +76,7 @@ From the App Store screenshots: interlocked C-shaped rings, each with a gap. Rot
 - Per-game stats: solved per difficulty, best streak without hints
 - 3 lives per level in every game; Catnap cats are final
 - One-tap Restart button with a label (keeps remaining lives)
-- Bead Sort pictures from free pixel art (CC0) and public-domain paintings on hard levels
+- Bead Sort pictures from free pixel art (CC0) and an archive of 52 public-domain paintings on hard levels
 
 ## Proposals waiting for your approval
 
