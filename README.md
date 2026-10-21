@@ -77,7 +77,7 @@ assets/icon-only.png       app icon (1024×1024)
   - Sudoku: entering a wrong number (right numbers are final; notes are free).
   - Magic Sort: a pour that leaves no way to finish (it is taken back).
   - Word Search: selecting 3 or more letters that aren't a word.
-  - Bead Sort: jamming the trays with beads that fit nowhere.
+  - Bead Sort: placing a bead in the wrong spot, or jamming the trays with beads that fit nowhere.
   - Arrow Go: tapping an arrow whose way out is blocked.
 - Restart (top right) clears the board in one tap but keeps your remaining lives.
 - Hints are unlimited and never cost lives, but they reset your "streak without hints" in Stats.
@@ -110,8 +110,9 @@ All games: every 5th level is hard, every 10th is super hard, and the levels in 
 - Grids grow from 7×7 to about 14×14.
 
 ### Bead Sort
-- The picture starts scrambled; a small preview shows the finished picture. Tap a wrong bead to lift it into the trays (any colors). Whenever an empty spot matches a bead in the trays, that bead jumps in. The level is done when the picture is complete.
-- Mistake: filling every tray slot with beads that fit nowhere. The beads go back to the picture and you lose a life.
+- The picture starts scrambled; a small preview shows the finished picture. Tap a wrong bead to lift it into the trays (any colors), then tap a tray bead and an empty spot to place it. Empty spots show a ring in the color they need. The level is done when the picture is complete.
+- Mistakes: placing a bead in a spot of another color, or filling every tray slot with beads that fit nowhere (they go back to the picture).
+- Hints: Show a bead (lifts a useful bead) and Auto-place (drops every fitting tray bead into place).
 - Easy and medium levels: pixel art from the free CC0 Dungeon Crawl tile set. Hard and super hard: an archive of 52 public-domain paintings (van Gogh, Leonardo, Klimt, Hokusai, Vermeer, Monet, Bruegel, Botticelli…) with only one tray.
 - Difficulty is measured by how often random lifting would jam the trays; every level is checked to be finishable.
 - Sources and licenses are in [CREDITS.md](CREDITS.md). To rebuild the pictures: `python3 tools/build_bead_art.py <CC0-Dungeon-Pack folder>` and `python3 tools/build_painting_art.py <paintings folder>`.

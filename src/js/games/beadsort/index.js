@@ -3,7 +3,7 @@ import { haptic } from '../../core/native.js';
 import { h, toast } from '../../core/ui.js';
 import { createShell, TIER_LABEL, LIVES } from '../../core/shell.js';
 import { stats } from '../../core/stats.js';
-import { ART, SLOTS, HOLE, target, lift, jammed, unjam, solved, correct, total, bestLift } from './engine.js';
+import { ART, SLOTS, HOLE, target, lift, place, settle, jammed, unjam, solved, correct, total, bestLift } from './engine.js';
 import { buildLevel } from './levels.js';
 
 const shade = (hex) => (parseInt(hex.slice(1, 3), 16) + parseInt(hex.slice(3, 5), 16) + parseInt(hex.slice(5, 7), 16) < 90 ? 'var(--bead-k)' : hex);
@@ -13,14 +13,15 @@ const art = `<svg viewBox="0 0 40 40" aria-hidden="true">
   ${[[14, 9, 'k'], [20, 9, 'k'], [26, 9, 'k'], [11, 15, 'k'], [17, 15, '5'], [23, 15, '0'], [29, 15, 'k'], [11, 21, 'k'], [17, 21, '5'], [23, 21, '5'], [29, 21, 'k'], [14, 27, 'k'], [20, 27, '0'], [26, 27, 'k'], [20, 33, 'k']]
     .map(([x, y, c]) => `<circle cx="${x}" cy="${y}" r="2.7" fill="${c === 'k' ? 'var(--bead-k)' : `var(--p${c})`}"/>`).join('')}
 </svg>`;
+const autoIc = `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="7" cy="17" r="3" fill="currentColor"/><circle cx="17" cy="7" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.5 14.5 L14.5 9.5 M11 9.5 H14.5 V13" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const bulb = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 17 H15 M10 20.5 H14 M8.5 14 Q6 12 6 9 A6 6 0 0 1 18 9 Q18 12 15.5 14 L15 17 H9 Z" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
 
 const rules = `<ul class="rules">
   <li><span class="rule-ic">${art}</span><span><b>The picture is scrambled.</b> Rebuild it to match the small preview.</span></li>
-  <li><span class="rule-ic">${art}</span><span><b>Tap a bead</b> to lift it into the trays, which hold any colors. Whenever an empty spot matches a bead in the trays, that bead jumps in.</span></li>
-  <li><span class="rule-ic rule-num">3</span><span><b>You have 3 lives.</b> Filling every tray slot with beads that fit nowhere costs one, and the beads go back.</span></li>
+  <li><span class="rule-ic">${art}</span><span><b>Tap a bead</b> to lift it into the trays, which hold any colors. Then tap a bead in the trays and an empty spot to place it.</span></li>
+  <li><span class="rule-ic rule-num">3</span><span><b>You have 3 lives.</b> Placing a bead in a spot of another color costs one, and so does filling every tray slot with beads that fit nowhere.</span></li>
 </ul>
-<p class="sheet-note">Lift the wrong beads in a smart order so the trays never jam. The level is done when the picture is complete.</p>`;
+<p class="sheet-note">Empty spots show a ring in the color they need. The level is done when the picture is complete. Auto-place is a hint that drops every fitting tray bead into place.</p>`;
 
 const load = () => ({ level: 1, board: null, trays: [], solved: 0, lives: LIVES, ...store.get('beadsort', {}) });
 const save = (s) => store.set('beadsort', s);
@@ -37,9 +38,9 @@ export default {
 
 function mount(root, { exit }) {
   const saved = load();
-  let puz, goal, st, cap, colors, beadEls = [];
+  let puz, goal, st, cap, colors, beadEls = [], sel = -1;
 
-  const reset = () => { st = { board: puz.board.slice(), trays: [] }; render(); };
+  const reset = () => { st = { board: puz.board.slice(), trays: [] }; sel = -1; render(); };
   const shell = createShell(root, {
     name: 'Bead Sort',
     rules,
@@ -59,7 +60,10 @@ function mount(root, { exit }) {
   const board = wrap.querySelector('.bead-board'), goalSvg = wrap.querySelector('.bead-goal'), caption = wrap.querySelector('.ws-theme');
   const bar = wrap.querySelector('.bead-progress span'), pct = wrap.querySelector('.bead-progress b');
   const trays = h('<div class="trays" aria-label="Trays"></div>');
-  shell.controls.append(trays, h(`<div class="ws-tools"><button class="tool" data-tool="hint"><span class="tool-ic">${bulb}</span><span>Show a bead</span></button></div>`));
+  shell.controls.append(trays, h(`<div class="ms-tools bead-tools">
+    <button class="tool" data-tool="hint"><span class="tool-ic">${bulb}</span><span>Show a bead</span></button>
+    <button class="tool" data-tool="auto"><span class="tool-ic">${autoIc}</span><span>Auto-place</span></button>
+  </div>`));
 
   function startLevel() {
     shell.hideWin();
@@ -106,8 +110,10 @@ function mount(root, { exit }) {
       beadEls[i].classList.add(cls);
     });
     trays.replaceChildren(...Array.from({ length: puz.trays }, (_, t) => h(`<div class="tray">${Array.from({ length: SLOTS }, (_, k) => {
-      const c = st.trays[t * SLOTS + k];
-      return `<span class="slot"${c !== undefined ? ` style="background:${colors[c]}"` : ''}></span>`;
+      const n = t * SLOTS + k, c = st.trays[n];
+      return c !== undefined
+        ? `<button class="slot full${n === sel ? ' sel' : ''}" data-k="${n}" style="background:${colors[c]}" aria-label="Tray bead ${n + 1}"></button>`
+        : '<span class="slot"></span>';
     }).join('')}</div>`)));
     const p = Math.floor((correct(goal, st.board) / total(goal)) * 100);
     bar.style.setProperty('--w', `${p}%`);
@@ -118,14 +124,28 @@ function mount(root, { exit }) {
     if (!shell.won && solved(goal, st)) win();
   }
 
+  function mistake(i) {
+    saved.lives -= 1;
+    save(saved);
+    render([i], 'returned');
+    shell.loseLife(saved.lives);
+  }
+
   function pick(i, hinted) {
-    if (st.board[i] < 0) return;
+    if (goal.cells[i] < 0) return;
+    if (st.board[i] === HOLE) {
+      if (sel < 0) return toast('Pick a bead from the trays first');
+      if (!place(goal, st, sel, i)) return mistake(i);
+      sel = -1;
+      haptic.place();
+      return render([i]);
+    }
     if (st.trays.length >= cap) return toast('The trays are full');
-    const placed = lift(goal, st, i, cap);
+    lift(st, i, cap);
+    sel = -1;
     haptic.tap();
-    if (placed.length) haptic.place();
-    render(hinted ? [i, ...placed] : placed);
-    if (!solved(goal, st) && jammed(st, cap)) {
+    render(hinted ? [i] : []);
+    if (jammed(goal, st, cap)) {
       setTimeout(() => {
         const back = unjam(st);
         saved.lives -= 1;
@@ -141,6 +161,15 @@ function mount(root, { exit }) {
     if (i === undefined) return;
     saved.hinted = true;
     pick(i, true);
+  }
+
+  function autoPlace() {
+    const placed = settle(goal, st);
+    if (!placed.length) return toast('No tray bead fits an empty spot yet');
+    saved.hinted = true;
+    sel = -1;
+    haptic.place();
+    render(placed);
   }
 
   function win() {
@@ -163,7 +192,16 @@ function mount(root, { exit }) {
     if (b && !shell.won && puz) pick(+b.dataset.i);
   });
   shell.controls.addEventListener('click', (e) => {
-    if (e.target.closest('[data-tool="hint"]') && !shell.won && puz) hint();
+    if (shell.won || !puz) return;
+    const slot = e.target.closest('.slot.full');
+    if (slot) {
+      sel = sel === +slot.dataset.k ? -1 : +slot.dataset.k;
+      haptic.tap();
+      return render();
+    }
+    const tool = e.target.closest('[data-tool]')?.dataset.tool;
+    if (tool === 'hint') hint();
+    if (tool === 'auto') autoPlace();
   });
 
   startLevel();

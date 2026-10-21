@@ -240,7 +240,7 @@ svg { display: block; width: 100%; height: 100%; }
 
 /* Bead Sort */
 .bead-board {
-  --size: min(100%, 520px, calc(100dvh - 460px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)));
+  --size: min(100%, 520px, calc(100dvh - 500px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)));
   width: min(var(--size), var(--size) * var(--w) / var(--h)); max-width: 100%; aspect-ratio: var(--w) / var(--h);
   display: grid; grid-template-columns: repeat(var(--w), 1fr); grid-template-rows: repeat(var(--h), 1fr); gap: 2px;
 }
@@ -262,9 +262,12 @@ svg { display: block; width: 100%; height: 100%; }
 .bead-wrap .ws-theme { line-height: 1.15; }
 .bead-wrap .ws-theme small { display: block; font-family: var(--body); font-weight: 800; font-size: .78rem; color: var(--muted); margin-top: 2px; }
 .trays { display: flex; justify-content: center; gap: 14px; }
-.tray { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; padding: 9px; border-radius: 16px; background: var(--surface); box-shadow: 0 1px 0 var(--line); }
+.tray { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; padding: 10px; border-radius: 16px; background: var(--surface); box-shadow: 0 1px 0 var(--line); }
 .tray.cleared { animation: pop .35s ease-out; }
-.slot { width: 15px; height: 15px; border-radius: 50%; background: var(--sunk); box-shadow: inset 0 1px 2px rgba(0, 0, 0, .12); }
+.bead-tools { grid-template-columns: repeat(2, 1fr); max-width: 320px; width: 100%; margin: 0 auto; }
+button.slot { padding: 0; border: 0; cursor: pointer; }
+.slot.sel { outline: 3px solid var(--ink); outline-offset: 2px; transform: scale(1.12); }
+.slot { width: 22px; height: 22px; border-radius: 50%; background: var(--sunk); box-shadow: inset 0 1px 2px rgba(0, 0, 0, .12); }
 
 /* Arrow Go */
 .ag-board {

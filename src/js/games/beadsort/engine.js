@@ -53,14 +53,25 @@ export function settle(goal, st) {
   return placed;
 }
 
-export function lift(goal, st, i, cap) {
-  if (st.board[i] < 0 || st.trays.length >= cap) return null;
+export function lift(st, i, cap) {
+  if (st.board[i] < 0 || st.trays.length >= cap) return false;
   st.trays.push(st.board[i]);
   st.board[i] = HOLE;
-  return settle(goal, st);
+  return true;
 }
 
-export const jammed = (st, cap) => st.trays.length >= cap;
+export function place(goal, st, k, i) {
+  if (st.board[i] !== HOLE || st.trays[k] !== goal.cells[i]) return false;
+  st.board[i] = st.trays[k];
+  st.trays.splice(k, 1);
+  return true;
+}
+
+export function canPlaceAny(goal, st) {
+  return st.board.some((c, i) => c === HOLE && st.trays.includes(goal.cells[i]));
+}
+
+export const jammed = (goal, st, cap) => st.trays.length >= cap && !canPlaceAny(goal, st);
 
 export function unjam(st) {
   const holes = [];
@@ -92,8 +103,9 @@ export function playout(goal, board, cap, r) {
   for (let guard = 0; guard < 5000 && !solved(goal, st); guard++) {
     const wrong = misplaced(goal, st);
     const i = r ? wrong[r.int(wrong.length)] : bestLift(goal, st);
-    lift(goal, st, i, cap);
-    if (!solved(goal, st) && jammed(st, cap)) return false;
+    lift(st, i, cap);
+    settle(goal, st);
+    if (!solved(goal, st) && st.trays.length >= cap) return false;
   }
   return solved(goal, st);
 }
