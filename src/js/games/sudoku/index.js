@@ -1,8 +1,9 @@
 import { store } from '../../core/store.js';
 import { haptic } from '../../core/native.js';
-import { h, toast } from '../../core/ui.js';
-import { createShell, TIER_LABEL } from '../../core/shell.js';
-import { PEERS, ROW, COL, BOX, nextLogical } from './engine.js';
+import { h } from '../../core/ui.js';
+import { createShell, TIER_LABEL, LIVES } from '../../core/shell.js';
+import { stats } from '../../core/stats.js';
+import { PEERS, ROW, COL, BOX, nextLogical, candidates } from './engine.js';
 import { buildLevel } from './levels.js';
 
 const art = `<svg viewBox="0 0 40 40" aria-hidden="true">
@@ -15,16 +16,17 @@ const art = `<svg viewBox="0 0 40 40" aria-hidden="true">
 
 const pencil = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20 L5 15.5 L15.5 5 Q17 3.5 18.5 5 L19 5.5 Q20.5 7 19 8.5 L8.5 19 Z M13.5 7 L17 10.5" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
 const eraser = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 20 L4.5 15.5 Q3 14 4.5 12.5 L12.5 4.5 Q14 3 15.5 4.5 L19.5 8.5 Q21 10 19.5 11.5 L11 20 Z M8.5 9 L15 15.5 M9 20 H20" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
+const autoNotes = `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="8.5" cy="8.5" r="1.4" fill="currentColor"/><circle cx="15.5" cy="8.5" r="1.4" fill="currentColor"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/><circle cx="8.5" cy="15.5" r="1.4" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.4" fill="currentColor"/></svg>`;
 const bulb = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 17 H15 M10 20.5 H14 M8.5 14 Q6 12 6 9 A6 6 0 0 1 18 9 Q18 12 15.5 14 L15 17 H9 Z" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
 
 const rules = `<ul class="rules">
   <li><span class="rule-ic rule-num">1–9</span><span><b>Fill every row</b> with the numbers 1 to 9, each once.</span></li>
   <li><span class="rule-ic rule-num">1–9</span><span><b>Same for every column</b> and every 3×3 box.</span></li>
-  <li><span class="rule-ic rule-num">!</span><span><b>Wrong numbers turn red</b> so you can fix them.</span></li>
+  <li><span class="rule-ic rule-num">3</span><span><b>You have 3 lives.</b> A wrong number costs one; a right one stays in place.</span></li>
 </ul>
-<p class="sheet-note">Tap a square, then a number. Turn on Notes to jot down small candidate numbers instead.</p>`;
+<p class="sheet-note">Tap a square, then a number. Turn on Notes to jot down small candidate numbers instead; notes never cost lives.</p>`;
 
-const load = () => store.get('sudoku', { level: 1, vals: null, notes: null, solved: 0, seenRules: false });
+const load = () => ({ lives: LIVES, ...store.get('sudoku', { level: 1, vals: null, notes: null, solved: 0, seenRules: false }) });
 const save = (s) => store.set('sudoku', s);
 
 export default {
@@ -46,6 +48,13 @@ function mount(root, { exit }) {
     rules,
     winArt: `<div class="win-icon">${art}</div>`,
     onBack: exit,
+    onRetry: () => {
+      saved.lives = LIVES;
+      shell.setLives(LIVES);
+      vals = puz.puzzle.slice();
+      notes.fill(0);
+      refresh();
+    },
     onRestart: () => {
       vals = puz.puzzle.slice();
       notes.fill(0);
@@ -66,6 +75,7 @@ function mount(root, { exit }) {
   shell.controls.append(h(`<div class="sdk-tools">
     <button class="tool" data-tool="notes" aria-pressed="false"><span class="tool-ic">${pencil}</span><span>Notes</span></button>
     <button class="tool" data-tool="erase"><span class="tool-ic">${eraser}</span><span>Erase</span></button>
+    <button class="tool" data-tool="auto"><span class="tool-ic">${autoNotes}</span><span>Auto notes</span></button>
     <button class="tool" data-tool="hint"><span class="tool-ic">${bulb}</span><span>Show a number</span></button>
   </div>`));
   const pad = h('<div class="sdk-pad" aria-label="Numbers"></div>');
@@ -85,6 +95,7 @@ function mount(root, { exit }) {
       notes = saved.notes?.length === 81 ? saved.notes.slice() : new Array(81).fill(0);
       sel = -1;
       shell.setTier(puz.tier);
+      shell.setLives(saved.lives);
       cells.forEach((c, i) => c.classList.toggle('given', puz.puzzle[i] > 0));
       refresh();
       shell.loading(false);
@@ -122,26 +133,29 @@ function mount(root, { exit }) {
   }
 
   function put(i, d) {
-    if (i < 0 || puz.puzzle[i]) return;
-    if (notesMode && !vals[i]) {
+    if (i < 0 || vals[i]) return;
+    if (notesMode) {
       notes[i] ^= 1 << d;
       haptic.tap();
+    } else if (d !== puz.sol[i]) {
+      cells[i].textContent = d;
+      cells[i].classList.add('wrong');
+      saved.lives -= 1;
+      save(saved);
+      shell.loseLife(saved.lives);
+      setTimeout(refresh, 700);
+      return;
     } else {
-      vals[i] = vals[i] === d ? 0 : d;
-      if (vals[i]) for (const j of PEERS[i]) notes[j] &= ~(1 << d);
+      vals[i] = d;
+      notes[i] = 0;
+      for (const j of PEERS[i]) notes[j] &= ~(1 << d);
       haptic.place();
     }
     refresh();
   }
 
   function hint() {
-    const wrong = vals.findIndex((v, i) => v && v !== puz.sol[i]);
-    if (wrong >= 0) {
-      sel = wrong;
-      vals[wrong] = puz.sol[wrong];
-      toast('Fixed a wrong number');
-      return reveal(wrong);
-    }
+    saved.hinted = true;
     const target = sel >= 0 && !vals[sel] ? sel : nextLogical(vals)?.place ?? vals.findIndex((v) => !v);
     if (target < 0) return;
     sel = target;
@@ -161,7 +175,9 @@ function mount(root, { exit }) {
   function win() {
     shell.won = true;
     haptic.win();
-    saved.solved = (saved.solved || 0) + 1;
+    saved.solved = stats.win('sudoku', puz.tier, saved.hinted).solved;
+    saved.hinted = false;
+    saved.lives = LIVES;
     const level = saved.level;
     saved.level += 1;
     saved.vals = null;
@@ -194,12 +210,17 @@ function mount(root, { exit }) {
       e.target.closest('[data-tool]').setAttribute('aria-pressed', notesMode);
       refresh();
     }
-    if (t === 'erase' && sel >= 0 && !puz.puzzle[sel]) {
-      vals[sel] = 0;
+    if (t === 'erase' && sel >= 0 && !vals[sel]) {
       notes[sel] = 0;
       refresh();
     }
     if (t === 'hint') hint();
+    if (t === 'auto') {
+      const cand = candidates(vals.map((v, i) => (v === puz.sol[i] ? v : 0)));
+      vals.forEach((v, i) => { if (!v) notes[i] = cand[i]; });
+      haptic.tap();
+      refresh();
+    }
   });
 
   startLevel();

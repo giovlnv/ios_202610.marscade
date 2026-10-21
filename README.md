@@ -10,6 +10,7 @@ Built with plain JavaScript, wrapped with Capacitor, compiled by GitHub Actions 
 | Catnap (cat placement puzzle) | Playable |
 | Sudoku | Playable |
 | Magic Sort | Playable |
+| Word Search (English and Portuguese) | Playable |
 | Everything else | See [BACKLOG.md](BACKLOG.md) |
 
 ## Run it on your PC
@@ -21,7 +22,7 @@ npm run dev
 
 Open http://localhost:8000. To try it on the iPhone before building, open `http://<your-PC-IP>:8000` in Safari while both are on the same Wi-Fi.
 
-`npm test` checks that Catnap and Sudoku levels each have exactly one solution and that Magic Sort levels can be finished.
+`npm test` checks that Catnap and Sudoku levels each have exactly one solution, that Magic Sort levels can be finished, and that Word Search levels build in both languages.
 
 ## Put it on the iPhone
 
@@ -67,6 +68,16 @@ assets/icon-only.png       app icon (1024×1024)
 3. Import the game in `src/js/games/index.js` and add it to `games`.
 4. Save progress with `store.get('<id>', defaults)` and `store.set('<id>', value)`.
 
+## Shared rules
+
+- Every level gives you **3 lives**. A mistake costs one; at zero you start the level over.
+  - Catnap: placing a cat in the wrong square (placed cats are final).
+  - Sudoku: entering a wrong number (right numbers are final; notes are free).
+  - Magic Sort: a pour that leaves no way to finish (it is taken back).
+  - Word Search: selecting 3 or more letters that aren't a word.
+- Hints are unlimited and never cost lives, but they reset your "streak without hints" in Stats.
+- Settings on the home screen: vibration, light/dark/auto appearance, and word-game language.
+
 ## Difficulty
 
 All games: every 5th level is hard, every 10th is super hard, and the levels in between are randomly easy or medium (medium gets more common over time). Each level number always produces the same puzzle.
@@ -85,3 +96,10 @@ All games: every 5th level is hard, every 10th is super hard, and the levels in 
 - More colors as you progress (3 up to about 11).
 - Hard levels have only one empty tube. Super hard levels also have taller tubes (5 layers).
 - Every level is checked by a solver so it can always be finished.
+- Hard levels hide the lower layers of some tubes (shown as ?) until they reach the top; super hard levels hide them in every tube.
+- Undo is free; one extra empty tube can be added per level.
+
+### Word Search
+- 12 themes per language, words placed with overlaps.
+- Easy: across and down only. Medium: adds diagonals. Hard: any direction, including backwards. Super hard: also scatters partial "decoy" words.
+- Grids grow from 7×7 to about 14×14.

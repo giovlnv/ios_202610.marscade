@@ -1,7 +1,8 @@
 import { store } from '../../core/store.js';
 import { haptic } from '../../core/native.js';
 import { h, toast } from '../../core/ui.js';
-import { createShell, TIER_LABEL } from '../../core/shell.js';
+import { createShell, TIER_LABEL, LIVES } from '../../core/shell.js';
+import { stats } from '../../core/stats.js';
 import { canPour, pour, solve, solved } from './engine.js';
 import { buildLevel } from './levels.js';
 
@@ -16,15 +17,17 @@ const tubeSvg = (fills) => `<svg viewBox="0 0 40 40" aria-hidden="true">
 </svg>`;
 const art = tubeSvg([['var(--p0)', 'var(--p8)', 'var(--p0)'], ['var(--p8)', 'var(--p1)'], ['var(--p1)', 'var(--p0)', 'var(--p8)', 'var(--p1)']]);
 const bulb = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 17 H15 M10 20.5 H14 M8.5 14 Q6 12 6 9 A6 6 0 0 1 18 9 Q18 12 15.5 14 L15 17 H9 Z" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
+const undoIc = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7 L4.5 11.5 L9 16 M5 11.5 H14 Q19.5 11.5 19.5 16 Q19.5 19.5 15 19.5 H12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const plusTube = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4 V17 Q5 20.5 8.5 20.5 Q12 20.5 12 17 V4" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/><path d="M18 6 V14 M14 10 H22" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>`;
 
 const rules = `<ul class="rules">
   <li><span class="rule-ic">${art}</span><span><b>Sort the colors</b> so each tube holds a single color.</span></li>
   <li><span class="rule-ic">${art}</span><span><b>Pour onto the same color</b> or into an empty tube, as long as there's room.</span></li>
-  <li><span class="rule-ic">${art}</span><span><b>Plan ahead.</b> If you get stuck, start the level over.</span></li>
+  <li><span class="rule-ic rule-num">3</span><span><b>You have 3 lives.</b> A pour that leaves no way to finish costs one and is taken back.</span></li>
 </ul>
-<p class="sheet-note">Tap a tube to pick it up, then tap where to pour. All matching layers on top pour together.</p>`;
+<p class="sheet-note">Tap a tube to pick it up, then tap where to pour. Layers marked ? stay hidden until they reach the top. Undo is free; you can add one extra empty tube per level.</p>`;
 
-const load = () => store.get('magicsort', { level: 1, tubes: null, solved: 0, seenRules: false });
+const load = () => ({ lives: LIVES, ...store.get('magicsort', { level: 1, tubes: null, solved: 0, seenRules: false }) });
 const save = (s) => store.set('magicsort', s);
 
 export default {
@@ -39,20 +42,34 @@ export default {
 
 function mount(root, { exit }) {
   const saved = load();
-  let puz, tubes, sel = -1;
+  let puz, tubes, hidden, extra, sel = -1, history = [];
+
+  const reset = () => {
+    tubes = puz.tubes.map((t) => t.slice());
+    hidden = puz.hidden.slice();
+    extra = false;
+    history = [];
+    sel = -1;
+  };
 
   const shell = createShell(root, {
     name: 'Magic Sort',
     rules,
     winArt: `<div class="win-icon">${art}</div>`,
     onBack: exit,
-    onRestart: () => { tubes = puz.tubes.map((t) => t.slice()); sel = -1; render(); },
+    onRestart: () => { reset(); render(); },
+    onRetry: () => { reset(); saved.lives = LIVES; shell.setLives(LIVES); render(); },
     onRulesClosed: () => { saved.seenRules = true; save(saved); },
     onNext: startLevel,
   });
   const rack = h('<div class="rack" hidden></div>');
   shell.stage.append(rack);
-  shell.controls.append(h(`<div class="ms-tools"><button class="tool" data-tool="hint"><span class="tool-ic">${bulb}</span><span>Show a move</span></button></div>`));
+  const tools = h(`<div class="ms-tools">
+    <button class="tool" data-tool="undo"><span class="tool-ic">${undoIc}</span><span>Undo</span></button>
+    <button class="tool" data-tool="tube"><span class="tool-ic">${plusTube}</span><span>Add a tube</span></button>
+    <button class="tool" data-tool="hint"><span class="tool-ic">${bulb}</span><span>Show a move</span></button>
+  </div>`);
+  shell.controls.append(tools);
 
   function startLevel() {
     shell.hideWin();
@@ -63,9 +80,14 @@ function mount(root, { exit }) {
     setTimeout(() => {
       if (level !== saved.level || !shell.el.isConnected) return;
       puz = buildLevel(level);
-      tubes = saved.tubes?.length === puz.tubes.length ? saved.tubes.map((t) => t.slice()) : puz.tubes.map((t) => t.slice());
-      sel = -1;
+      reset();
+      if (saved.tubes?.length >= puz.tubes.length) {
+        tubes = saved.tubes.map((t) => t.slice());
+        hidden = saved.hidden?.length === tubes.length ? saved.hidden.slice() : tubes.map(() => 0);
+        extra = !!saved.extra;
+      }
       shell.setTier(puz.tier);
+      shell.setLives(saved.lives);
       render();
       shell.loading(false);
       rack.hidden = false;
@@ -75,6 +97,7 @@ function mount(root, { exit }) {
   }
 
   function render(flash = []) {
+    hidden = hidden.map((n, i) => Math.min(n, Math.max(0, tubes[i].length - 1)));
     const n = tubes.length, perRow = n <= 6 ? n : Math.ceil(n / 2);
     rack.style.setProperty('--per-row', perRow);
     rack.style.setProperty('--cap', puz.cap);
@@ -83,36 +106,84 @@ function mount(root, { exit }) {
       el.classList.toggle('sel', i === sel);
       el.classList.toggle('full', t.length === puz.cap && t.every((c) => c === t[0]));
       if (flash.includes(i)) el.classList.add('hinted');
-      el.firstChild.append(...t.map((c) => {
+      el.firstChild.append(...t.map((c, j) => {
         const s = h('<span class="seg"></span>');
-        s.style.background = color(c);
+        if (j < hidden[i]) {
+          s.classList.add('mystery');
+          s.textContent = '?';
+        } else s.style.background = color(c);
         return s;
       }));
       return el;
     }));
-    saved.tubes = tubes;
+    tools.querySelector('[data-tool="undo"]').disabled = !history.length;
+    tools.querySelector('[data-tool="tube"]').disabled = extra;
+    Object.assign(saved, { tubes, hidden, extra });
     save(saved);
     if (!shell.won && solved(tubes, puz.cap)) win();
   }
 
-  function move(a, b, flash = []) {
-    pour(tubes, puz.cap, a, b);
-    haptic.place();
+  function snapshot() {
+    history.push({ tubes: tubes.map((t) => t.slice()), hidden: hidden.slice() });
+    if (history.length > 200) history.shift();
+  }
+
+  function undo() {
+    const prev = history.pop();
+    if (!prev) return;
+    tubes = prev.tubes;
+    hidden = prev.hidden.map((n, i) => Math.min(n, hidden[i]));
     sel = -1;
+    haptic.tap();
+    render();
+  }
+
+  function move(a, b, flash = []) {
+    snapshot();
+    pour(tubes, puz.cap, a, b);
+    sel = -1;
+    if (!solved(tubes, puz.cap) && solve(tubes, puz.cap, 40000) === null) {
+      render([a, b]);
+      setTimeout(() => {
+        const prev = history.pop();
+        tubes = prev.tubes;
+        hidden = hidden.map((n, i) => Math.min(n, prev.hidden[i]));
+        saved.lives -= 1;
+        save(saved);
+        render();
+        shell.loseLife(saved.lives);
+      }, 450);
+      return;
+    }
+    haptic.place();
     render(flash);
   }
 
   function hint() {
-    const path = solve(tubes, puz.cap);
-    if (!path) return toast('No way to finish from here. Tap restart to try again.');
-    if (!path.length) return;
-    move(path[0][0], path[0][1], path[0]);
+    saved.hinted = true;
+    const path = solve(tubes, puz.cap, 150000);
+    if (path === undefined) return toast('Couldn’t find a move in time. Try Undo or another pour.');
+    if (!path) return toast('No way to finish from here. Use Undo or restart.');
+    if (path.length) move(path[0][0], path[0][1], path[0]);
+  }
+
+  function addTube() {
+    if (extra) return;
+    saved.hinted = true;
+    extra = true;
+    tubes.push([]);
+    hidden.push(0);
+    history = [];
+    haptic.tap();
+    render([tubes.length - 1]);
   }
 
   function win() {
     shell.won = true;
     haptic.win();
-    saved.solved = (saved.solved || 0) + 1;
+    saved.solved = stats.win('magicsort', puz.tier, saved.hinted).solved;
+    saved.hinted = false;
+    saved.lives = LIVES;
     const level = saved.level;
     saved.level += 1;
     saved.tubes = null;
@@ -120,7 +191,7 @@ function mount(root, { exit }) {
     rack.classList.add('solved');
     setTimeout(() => {
       rack.classList.remove('solved');
-      shell.showWin(level, `${TIER_LABEL[puz.tier]} · ${tubes.filter((t) => t.length).length} colors · ${saved.solved} solved so far`);
+      shell.showWin(level, `${TIER_LABEL[puz.tier]} · ${puz.tubes.filter((t) => t.length).length} colors · ${saved.solved} solved so far`);
     }, 800);
   }
 
@@ -141,8 +212,10 @@ function mount(root, { exit }) {
       render();
     }
   });
-  shell.controls.addEventListener('click', (e) => {
-    if (e.target.closest('[data-tool="hint"]') && !shell.won && puz) hint();
+  tools.addEventListener('click', (e) => {
+    const t = e.target.closest('[data-tool]')?.dataset.tool;
+    if (!t || shell.won || !puz) return;
+    ({ undo, tube: addTube, hint })[t]();
   });
 
   startLevel();

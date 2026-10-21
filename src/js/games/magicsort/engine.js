@@ -26,11 +26,11 @@ const key = (tubes) => tubes.map((t) => t.join(',')).sort().join('|');
 
 export function solve(start, cap, maxNodes = 60000) {
   const seen = new Set();
-  let nodes = 0;
+  let nodes = 0, cut = false;
   const path = [];
   const rec = (tubes) => {
     if (solved(tubes, cap)) return true;
-    if (++nodes > maxNodes) return false;
+    if (++nodes > maxNodes) { cut = true; return false; }
     const k = key(tubes);
     if (seen.has(k)) return false;
     seen.add(k);
@@ -59,7 +59,7 @@ export function solve(start, cap, maxNodes = 60000) {
     return false;
   };
   const ok = rec(start.map((t) => t.slice()));
-  return ok ? path : null;
+  return ok ? path : cut ? undefined : null;
 }
 
 export function generate(seed, { colors, cap, empty }, attempts = 40) {

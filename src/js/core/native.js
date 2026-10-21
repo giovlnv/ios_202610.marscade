@@ -3,11 +3,14 @@ import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
 import { Preferences } from '@capacitor/preferences';
 
 const native = Capacitor.isNativePlatform();
+let buzz = native;
+
+export const setHaptics = (on) => { buzz = native && on; };
 
 export const haptic = {
-  tap: () => native && Haptics.impact({ style: ImpactStyle.Light }).catch(() => {}),
-  place: () => native && Haptics.impact({ style: ImpactStyle.Medium }).catch(() => {}),
-  win: () => native && Haptics.notification({ type: NotificationType.Success }).catch(() => {}),
+  tap: () => buzz && Haptics.impact({ style: ImpactStyle.Light }).catch(() => {}),
+  place: () => buzz && Haptics.impact({ style: ImpactStyle.Medium }).catch(() => {}),
+  win: () => buzz && Haptics.notification({ type: NotificationType.Success }).catch(() => {}),
 };
 
 export async function loadRaw(key) {

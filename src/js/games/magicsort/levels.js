@@ -20,7 +20,8 @@ export function buildLevel(level) {
     const seed = hashSeed('magicsort', level);
     let p = generate(seed, spec, spec.empty === 1 ? 150 : 40), tier = spec.tier;
     if (!p) { p = generate(seed, { ...spec, empty: 2 }); tier = Math.max(1, tier - 1); }
-    cache.set(level, { level, tier, ...p });
+    const hidden = p.tubes.map((t, i) => (tier === 3 || (tier === 2 && i % 2 === 0) ? Math.max(0, t.length - 1) : 0));
+    cache.set(level, { level, tier, hidden, ...p });
   }
   return cache.get(level);
 }

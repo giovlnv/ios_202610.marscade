@@ -14,7 +14,7 @@
 | 1 | Catnap (Meowdoku) | Done | – | 1 | Medium |
 | 2 | Sudoku | Done | – | 0.5 | Light |
 | 3 | Magic Sort | Done | – | 0.5 | Light |
-| 4 | Word Search | Next up? | Easy | 0.5–1 | Light |
+| 4 | Word Search | Done | – | 0.5 | Light |
 | 5 | Bead Sort (jewel color sort) | Planned | Medium | 1–1.5 | Medium |
 | 6 | Block Blast | Planned | Medium | 1 | Medium |
 | 7 | Arrow Go | Planned | Medium | 1 | Medium |
@@ -26,11 +26,6 @@
 | 13 | Helix Jump | Planned | Hard | 2–3 | Heavy |
 
 ## Details
-
-### 4. Word Search · Easy
-- Places words from a themed list in all 8 directions, fills the rest with random letters.
-- Drag to select a word.
-- Word lists bundled in the app (a few KB per theme), in English and Portuguese. Portuguese needs care with accents (Á, Ç, Ã…).
 
 ### 5. Bead Sort (jewel color sort) · Medium
 - A pixel picture made of colored beads; tap beads to send them to trays; a full tray of one color clears.
@@ -82,14 +77,14 @@ From the App Store screenshots: interlocked C-shaped rings, each with a gap. Rot
 - Ball bouncing down a spinning tower; drag to rotate.
 - Needs a small 3D library bundled for offline use, simple physics, smooth 60 fps.
 
+## Approved and built
+
+- Sudoku "Auto notes"
+- Magic Sort hidden layers, Undo, one extra tube per level
+- Hub settings: vibration, appearance, word-game language
+- Per-game stats: solved per difficulty, best streak without hints
+- 3 lives per level in every game; Catnap cats are final
+
 ## Proposals waiting for your approval
 
-Not built. Each needs your OK first.
-
-| Proposal | Why it would help | Effort |
-|---|---|---|
-| Sudoku: "Auto notes" button | Fills every square with its possible numbers, like Auto-X in Catnap. Saves tedious note-taking on hard levels. | Small |
-| Magic Sort: hidden layers on hard levels | The original hides lower layers until they reach the top. Adds challenge without adding colors. | Small |
-| Magic Sort: undo last pour, or one extra tube per level | Without undo, one wrong pour can force a restart on long levels. | Small |
-| Hub settings: haptics on/off, theme, language | One place for shared preferences; language is needed once word games arrive. | Small |
-| Per-game stats | Levels solved per difficulty, best streaks. | Small |
+Nothing pending right now.

@@ -1,13 +1,14 @@
 import { store } from '../../core/store.js';
 import { haptic } from '../../core/native.js';
 import { h, toast } from '../../core/ui.js';
-import { createShell, TIER_LABEL } from '../../core/shell.js';
+import { createShell, TIER_LABEL, LIVES } from '../../core/shell.js';
+import { stats } from '../../core/stats.js';
 import { geometry, newState, place, step, apply } from './engine.js';
 import { requestLevel } from './levels.js';
 import { catSvg, xSvg, icons } from './art.js';
 
 const EMPTY = 0, X = 1, CAT = 2;
-const load = () => store.get('catnap', { level: 1, marks: null, solved: 0, seenRules: false });
+const load = () => ({ lives: LIVES, ...store.get('catnap', { level: 1, marks: null, solved: 0, seenRules: false }) });
 const save = (s) => store.set('catnap', s);
 
 const rules = `<ul class="rules">
@@ -15,7 +16,7 @@ const rules = `<ul class="rules">
   <li><span class="rule-ic">${catSvg}</span><span><b>One cat per row and column.</b></span></li>
   <li><span class="rule-ic">${catSvg}</span><span><b>Cats need their space.</b> No two cats may touch, not even diagonally.</span></li>
 </ul>
-<p class="sheet-note">Tap a square once for an X, twice for a cat, three times to clear it. Drag across squares to mark several X's at once.</p>`;
+<p class="sheet-note">Tap a square once for an X, twice for a cat. A placed cat stays put, and a wrong cat costs one of your 3 lives. Drag across squares to mark or clear several X's at once.</p>`;
 
 export default {
   id: 'catnap',
@@ -37,6 +38,7 @@ function mount(root, { exit }) {
     winArt: `<div class="win-cats">${catSvg}${catSvg}${catSvg}</div>`,
     onBack: exit,
     onRestart: () => { marks.fill(EMPTY); refresh(); },
+    onRetry: () => { marks.fill(EMPTY); saved.lives = LIVES; shell.setLives(LIVES); refresh(); },
     onRulesClosed: () => { saved.seenRules = true; save(saved); },
     onNext: startLevel,
   });
@@ -50,6 +52,7 @@ function mount(root, { exit }) {
   shell.controls.addEventListener('click', (e) => {
     const k = e.target.closest('[data-hint]')?.dataset.hint;
     if (!k || shell.won || !puz) return;
+    if (k !== 'auto') saved.hinted = true;
     ({ x: hintX, cat: hintCat, auto: autoX })[k]();
   });
 
@@ -71,6 +74,7 @@ function mount(root, { exit }) {
       solSet = new Set(puz.sol.map((c, r) => r * puz.n + c));
       marks = saved.marks && saved.marks.length === puz.n * puz.n ? [...saved.marks].map(Number) : new Array(puz.n * puz.n).fill(EMPTY);
       shell.setTier(puz.actualTier);
+      shell.setLives(saved.lives);
       renderBoard();
       shell.loading(false);
       board.hidden = false;
@@ -129,7 +133,9 @@ function mount(root, { exit }) {
   function win() {
     shell.won = true;
     haptic.win();
-    saved.solved = (saved.solved || 0) + 1;
+    saved.solved = stats.win('catnap', puz.actualTier, saved.hinted).solved;
+    saved.hinted = false;
+    saved.lives = LIVES;
     board.classList.add('solved');
     const level = saved.level;
     saved.level += 1;
@@ -160,17 +166,10 @@ function mount(root, { exit }) {
     }
     const rest = marks.map((_, i) => i).filter((i) => marks[i] !== X && !solSet.has(i));
     if (!rest.length) return toast('Every square that needs an X has one');
-    const i = rest.find((j) => marks[j] === EMPTY) ?? rest[0];
-    if (marks[i] === CAT) toast('This cat was in the wrong spot');
-    setMark(i, X, true);
+    setMark(rest.find((j) => marks[j] === EMPTY) ?? rest[0], X, true);
   }
 
   function hintCat() {
-    const wrong = marks.findIndex((m, i) => m === CAT && !solSet.has(i));
-    if (wrong >= 0) {
-      setMark(wrong, X, true);
-      return toast('This cat was in the wrong spot');
-    }
     const st = logicState();
     for (let k = 0; k < 300 && st.cats.size < puz.n; k++) {
       const d = step(geo, st);
@@ -194,6 +193,17 @@ function mount(root, { exit }) {
   }
 
   function setMark(i, m, hinted) {
+    if (marks[i] === CAT) return;
+    if (m === CAT && !solSet.has(i)) {
+      marks[i] = X;
+      refresh();
+      cells[i].classList.remove('wrong');
+      void cells[i].offsetWidth;
+      cells[i].classList.add('wrong');
+      saved.lives -= 1;
+      save(saved);
+      return shell.loseLife(saved.lives);
+    }
     marks[i] = m;
     if (m === CAT) haptic.place(); else haptic.tap();
     refresh();
@@ -223,7 +233,7 @@ function mount(root, { exit }) {
   });
   board.addEventListener('pointerup', () => {
     if (!drag) return;
-    if (!drag.moved) setMark(drag.start, (marks[drag.start] + 1) % 3);
+    if (!drag.moved && marks[drag.start] !== CAT) setMark(drag.start, marks[drag.start] + 1);
     drag = null;
   });
   board.addEventListener('pointercancel', () => { drag = null; });
