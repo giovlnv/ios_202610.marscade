@@ -11,13 +11,13 @@ export const LIVES = 3;
 
 export const TIER_LABEL = ['Easy', 'Medium', 'Hard', 'Super hard'];
 
-export function createShell(root, { name, rules, winArt, onBack, onRestart, onRulesClosed, onNext, onRetry }) {
+export function createShell(root, { name, rules, winArt, onBack, onRestart, onRulesClosed, onNext, onRetry, lives = true }) {
   const el = h(`<section class="screen game">
     <header class="bar">
       <button class="icon-btn" data-act="back" aria-label="Back to games">${icons.back}</button>
       <div class="bar-title">
         <span class="lvl">Level <b></b></span>
-        <span class="title-row"><span class="tier"></span><span class="lives" role="img">${heart.repeat(LIVES)}</span></span>
+        <span class="title-row"><span class="tier"></span><span class="lives" role="img"${lives ? '' : ' hidden'}>${heart.repeat(LIVES)}</span></span>
       </div>
       <div class="bar-end">
         <button class="icon-btn" data-act="help" aria-label="How to play ${name}">${icons.help}</button>
@@ -70,6 +70,12 @@ export function createShell(root, { name, rules, winArt, onBack, onRestart, onRu
       [...$('.lives').children].forEach((h, i) => h.classList.toggle('lost', i >= n));
       $('.lives').setAttribute('aria-label', `${n} of ${LIVES} lives left`);
     },
+    showLost(title, text) {
+      shell.won = true;
+      $('#lost-title').textContent = title;
+      $('[data-lost] .win-sub').textContent = text;
+      $('[data-lost]').hidden = false;
+    },
     loseLife(n) {
       shell.setLives(n);
       const lives = $('.lives');
@@ -78,7 +84,7 @@ export function createShell(root, { name, rules, winArt, onBack, onRestart, onRu
       lives.classList.add('shake');
       if (n <= 0) {
         shell.won = true;
-        setTimeout(() => { $('[data-lost]').hidden = false; }, 500);
+        setTimeout(() => shell.showLost('Out of lives', 'That was your third mistake on this level. Try it again from the start.'), 500);
       } else toast(`Mistake. ${n} ${n === 1 ? 'life' : 'lives'} left`);
     },
     openRules() {

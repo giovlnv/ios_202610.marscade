@@ -39,7 +39,9 @@ export function buildLevel(level) {
     if (!miss) break;
   }
   const t = BANDS.findIndex(([lo, hi]) => best.rate >= lo && best.rate < hi);
-  const out = { level, tier: t < 0 ? 0 : t, ...best };
+  const tier2 = t < 0 ? 0 : t, goal = target(best.name);
+  const wrong = best.board.filter((c, i) => c !== goal.cells[i]).length;
+  const out = { level, tier: tier2, ...best, seconds: Math.round((wrong * [6, 5, 4, 3.5][tier2] + 30) / 5) * 5 };
   cache.set(level, out);
   return out;
 }
