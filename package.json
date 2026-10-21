@@ -6,7 +6,7 @@
   "scripts": {
     "build": "node build.mjs",
     "dev": "node build.mjs --serve",
-    "test": "node tests/catnap.test.mjs && node tests/sudoku.test.mjs && node tests/magicsort.test.mjs && node tests/wordsearch.test.mjs && node tests/beadsort.test.mjs"
+    "test": "node tests/catnap.test.mjs && node tests/sudoku.test.mjs && node tests/magicsort.test.mjs && node tests/wordsearch.test.mjs && node tests/beadsort.test.mjs && node tests/arrowgo.test.mjs"
   },
   "dependencies": {
     "@capacitor/core": "^8.5.3",

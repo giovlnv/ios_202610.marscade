@@ -11,7 +11,8 @@ Built with plain JavaScript, wrapped with Capacitor, compiled by GitHub Actions 
 | Sudoku | Playable |
 | Magic Sort | Playable |
 | Word Search (English and Portuguese) | Playable |
-| Bead Sort | Playable |
+| Bead Sort | Playable (rules being reworked) |
+| Arrow Go | Playable |
 | Everything else | See [BACKLOG.md](BACKLOG.md) |
 
 ## Run it on your PC
@@ -23,7 +24,7 @@ npm run dev
 
 Open http://localhost:8000. To try it on the iPhone before building, open `http://<your-PC-IP>:8000` in Safari while both are on the same Wi-Fi.
 
-`npm test` checks that Catnap and Sudoku levels each have exactly one solution, that Magic Sort levels can be finished, that Word Search levels build in both languages, and that Bead Sort levels can be cleared.
+`npm test` checks that Catnap and Sudoku levels each have exactly one solution, that Magic Sort levels can be finished, that Word Search levels build in both languages, that Bead Sort levels can be cleared, and that Arrow Go levels can be emptied.
 
 ## Put it on the iPhone
 
@@ -77,6 +78,7 @@ assets/icon-only.png       app icon (1024×1024)
   - Magic Sort: a pour that leaves no way to finish (it is taken back).
   - Word Search: selecting 3 or more letters that aren't a word.
   - Bead Sort: tapping a bead when no tray can take it.
+  - Arrow Go: tapping an arrow whose way out is blocked.
 - Restart (top right) clears the board in one tap but keeps your remaining lives.
 - Hints are unlimited and never cost lives, but they reset your "streak without hints" in Stats.
 - Settings on the home screen: vibration, light/dark/auto appearance, and word-game language.
@@ -112,3 +114,8 @@ All games: every 5th level is hard, every 10th is super hard, and the levels in 
 - Hard and super hard levels use famous public-domain paintings (Starry Night, The Great Wave, Mona Lisa, The Scream, Monet…) with fewer trays.
 - Difficulty is measured by how often random tapping would still finish the level; every level stores a known solution, which the hint follows.
 - Sources and licenses are in [CREDITS.md](CREDITS.md). To rebuild the pictures: `python3 tools/build_bead_art.py <CC0-Dungeon-Pack folder>` and `python3 tools/build_painting_art.py <paintings folder>`.
+
+### Arrow Go
+- Arrows are built in reverse removal order, so every level can always be cleared.
+- Harder levels have bigger boards (up to 12×12), longer and more bent arrows, and arrows deliberately placed in each other's way.
+- Difficulty is measured by how many "rounds" of freeing arrows the board needs.

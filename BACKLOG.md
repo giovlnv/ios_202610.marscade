@@ -15,9 +15,9 @@
 | 2 | Sudoku | Done | – | 0.5 | Light |
 | 3 | Magic Sort | Done | – | 0.5 | Light |
 | 4 | Word Search | Done | – | 0.5 | Light |
-| 5 | Bead Sort (jewel color sort) | Done | – | 0.5 | Medium |
-| 6 | Block Blast | Next |  Medium | 1 | Medium |
-| 7 | Arrow Go | Planned | Medium | 1 | Medium |
+| 5 | Bead Sort (jewel color sort) | Rework pending (waiting for gameplay video) | – | 0.5 | Medium |
+| 6 | Block Blast | Next | Medium | 1 | Medium |
+| 7 | Arrow Go | Done | – | 0.5 | Medium |
 | 8 | Stamp Solitaire | Planned | Medium | 1.5 | Medium |
 | 9 | Rotate Rings | Planned | Medium–Hard | 1.5–2 | Medium–Heavy |
 | 10 | Picture Builder | Planned | Medium–Hard | 1.5–2 | Medium–Heavy |
@@ -31,10 +31,6 @@
 - 8×8 board, three random pieces at a time, drag to place, full rows and columns clear.
 - Endless with best score; ends when no piece fits.
 - Main work: drag-and-drop that feels good with a finger (piece lifted above the finger, snap preview).
-
-### 7. Arrow Go · Medium
-- Grid of arrows; tap one and it slides out in its direction if the path is clear; clear the board.
-- Levels built backwards so every level is solvable.
 
 ### 8. Stamp Solitaire · Medium
 From the App Store screenshots: a solitaire layout of stamp cards, where the goal is sorting stamps into themed category albums.
@@ -71,6 +67,11 @@ From the App Store screenshots: interlocked C-shaped rings, each with a gap. Rot
 ### 13. Helix Jump · Hard
 - Ball bouncing down a spinning tower; drag to rotate.
 - Needs a small 3D library bundled for offline use, simple physics, smooth 60 fps.
+
+## In progress
+
+- Bead Sort rework: you pick which beads go on the trays, then place them into the picture; the level ends when the picture is complete. Waiting for your video of the original before building.
+- Painting archive (~50 public-domain works) for Bead Sort and Picture Builder hard levels: The Great Wave, The Kiss, more van Gogh and Leonardo. Free sources found so far cover about 12 works.
 
 ## Approved and built
 

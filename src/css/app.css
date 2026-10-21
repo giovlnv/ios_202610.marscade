@@ -259,6 +259,26 @@ svg { display: block; width: 100%; height: 100%; }
 .tray.cleared { animation: pop .35s ease-out; }
 .slot { width: 17px; height: 17px; border-radius: 50%; background: var(--sunk); box-shadow: inset 0 1px 2px rgba(0, 0, 0, .12); }
 
+/* Arrow Go */
+.ag-board {
+  --size: min(100%, 540px, calc(100dvh - 290px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)));
+  width: var(--size); aspect-ratio: 1; max-width: 100%;
+  background: var(--surface); border-radius: 20px; overflow: hidden;
+  box-shadow: 0 1px 0 var(--line), 0 14px 30px -22px rgba(42, 36, 64, .6);
+}
+.ag-svg { width: 100%; height: 100%; display: block; }
+.ag-dots circle { fill: var(--line); }
+.ag-arrow { cursor: pointer; }
+.ag-arrow .hit { fill: none; stroke: transparent; stroke-width: .95; stroke-linecap: round; stroke-linejoin: round; }
+.ag-arrow .body { fill: none; stroke: var(--c); stroke-width: .26; stroke-linecap: round; stroke-linejoin: round; }
+.ag-arrow .tip { fill: var(--c); stroke: var(--c); stroke-width: .06; stroke-linejoin: round; }
+.ag-arrow.bump { animation: shake .4s ease; }
+.ag-arrow.bump .body, .ag-arrow.bump .tip { stroke: var(--danger); fill: var(--danger); }
+.ag-arrow.bump .body { fill: none; }
+.ag-arrow.blocker .body { stroke-width: .38; }
+.ag-arrow.hinted { animation: agglow 1.2s ease-in-out 2; }
+@keyframes agglow { 50% { opacity: .25; } }
+
 /* Sheets and dialogs */
 .sheet-backdrop, .win-backdrop {
   position: fixed; inset: 0; z-index: 20; display: grid; align-items: end; justify-items: center;

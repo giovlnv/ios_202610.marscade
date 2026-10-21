@@ -23,7 +23,7 @@ const rules = `<ul class="rules">
 <p class="sheet-note">Drag from the first letter to the last. Change between English and Portuguese words in Settings on the home screen.</p>`;
 
 const LINE_COLORS = [8, 4, 1, 5, 3, 9, 7, 0, 12, 13, 11, 2];
-const load = () => ({ lives: LIVES, ...store.get('wordsearch', { level: 1, found: [], solved: 0, seenRules: false }) });
+const load = () => ({ level: 1, found: [], solved: 0, lives: LIVES, ...store.get('wordsearch', {}) });
 const save = (s) => store.set('wordsearch', s);
 
 export default {

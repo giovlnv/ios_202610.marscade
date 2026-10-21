@@ -3,10 +3,11 @@ import sudoku from './sudoku/index.js';
 import magicsort from './magicsort/index.js';
 import wordsearch from './wordsearch/index.js';
 import beadsort from './beadsort/index.js';
+import arrowgo from './arrowgo/index.js';
 
-export const games = [catnap, sudoku, magicsort, wordsearch, beadsort];
+export const games = [catnap, sudoku, magicsort, wordsearch, beadsort, arrowgo];
 
 export const upcoming = [
-  'Block Blast', 'Arrow Go',
+  'Block Blast',
   'Picture Builder', 'Rotate Rings', 'Stamp Solitaire', 'Crosswords', 'Magic Tiles', 'Helix Jump',
 ];
