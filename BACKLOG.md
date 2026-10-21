@@ -16,7 +16,7 @@
 | 3 | Magic Sort | Done | – | 0.5 | Light |
 | 4 | Word Search | Done | – | 0.5 | Light |
 | 5 | Bead Sort (jewel color sort) | Done (reworked from your video) | – | 1 | Medium |
-| 6 | Block Blast | Next | Medium | 1 | Medium |
+| 6 | Block Blast | Done | – | 0.5 | Medium |
 | 7 | Arrow Go | Done | – | 0.5 | Medium |
 | 8 | Stamp Solitaire | Planned | Medium | 1.5 | Medium |
 | 9 | Rotate Rings | Planned | Medium–Hard | 1.5–2 | Medium–Heavy |
@@ -26,11 +26,6 @@
 | 13 | Helix Jump | Planned | Hard | 2–3 | Heavy |
 
 ## Details
-
-### 6. Block Blast · Medium
-- 8×8 board, three random pieces at a time, drag to place, full rows and columns clear.
-- Endless with best score; ends when no piece fits.
-- Main work: drag-and-drop that feels good with a finger (piece lifted above the finger, snap preview).
 
 ### 8. Stamp Solitaire · Medium
 From the App Store screenshots: a solitaire layout of stamp cards, where the goal is sorting stamps into themed category albums.

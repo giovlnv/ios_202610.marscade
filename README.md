@@ -13,6 +13,7 @@ Built with plain JavaScript, wrapped with Capacitor, compiled by GitHub Actions 
 | Word Search (English and Portuguese) | Playable |
 | Bead Sort | Playable |
 | Arrow Go | Playable |
+| Block Blast | Playable |
 | Everything else | See [BACKLOG.md](BACKLOG.md) |
 
 ## Run it on your PC
@@ -78,6 +79,7 @@ assets/icon-only.png       app icon (1024×1024)
   - Magic Sort: a pour that leaves no way to finish (it is taken back).
   - Word Search: selecting 3 or more letters that aren't a word.
   - Arrow Go: tapping an arrow whose way out is blocked.
+  - Block Blast: running out of room (you then get three new pieces that fit).
 - Restart (top right) clears the board in one tap but keeps your remaining lives.
 - Hints are unlimited and never cost lives, but they reset your "streak without hints" in Stats.
 - Settings on the home screen: vibration, light/dark/auto appearance, and word-game language.
@@ -120,3 +122,9 @@ All games: every 5th level is hard, every 10th is super hard, and the levels in 
 - Arrows are built in reverse removal order, so every level can always be cleared.
 - Harder levels have bigger boards (up to 12×12), longer and more bent arrows, and arrows deliberately placed in each other's way.
 - Difficulty is measured by how many "rounds" of freeing arrows the board needs.
+
+### Block Blast
+- 8×8 board, three pieces at a time, drag to place; full rows and columns clear. Reach the level's target score to win.
+- Multi-line clears and clears on consecutive turns score extra.
+- Harder levels start with grey stones on the board, deal bigger and awkward pieces, and no longer guarantee that a dealt piece fits.
+- Hint: Show a spot highlights a good placement.
