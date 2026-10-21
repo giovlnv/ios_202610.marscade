@@ -29,16 +29,16 @@ Open http://localhost:8000. To try it on the iPhone before building, open `http:
 
 ## Put it on the iPhone
 
-1. Push to GitHub.
-2. Either run **Actions → Build iOS → Run workflow**, or tag a version:
+1. Push your changes to `main`.
+2. Start a build by pushing `main` to the `release` branch:
    ```bash
-   git tag v0.1.0
-   git push --tags
+   git push origin main:release
    ```
-3. Download `Marscade.ipa` (from the workflow run's artifacts, or from the GitHub release when you used a tag).
-4. Open the file with AltStore on the iPhone.
+   (or run **Actions → Build iOS → Run workflow** on GitHub).
+3. When the build finishes (about 10 minutes), open the repo's **Releases** page on the iPhone and download `Marscade.ipa` from the newest release.
+4. Open the file with AltStore.
 
-Bump `version` in `package.json` before each tagged release. Your progress is kept when you install a new version over the old one.
+Bump `version` in `package.json` when you want a new version number. Your progress is kept when you install a new version over the old one.
 
 ## Project layout
 
