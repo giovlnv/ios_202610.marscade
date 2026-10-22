@@ -13,7 +13,7 @@ const cache = new Map();
 export function buildLevel(level) {
   if (!cache.has(level)) {
     const tier = levelSpec(level);
-    cache.set(level, { level, ...generate(hashSeed('sudoku', level), tier, tier >= 2 ? 40 : 15) });
+    cache.set(level, { level, ...generate(hashSeed('sudoku', level), tier, tier >= 2 ? 80 : 15) });
   }
   return cache.get(level);
 }

@@ -254,20 +254,24 @@ svg { display: block; width: 100%; height: 100%; }
 
 /* Bead Sort */
 .bead-board {
-  --size: min(100%, 520px, calc(100dvh - 500px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)));
+  --size: min(100%, 520px, calc(100dvh - 470px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)));
   width: min(var(--size), var(--size) * var(--w) / var(--h)); max-width: 100%; aspect-ratio: var(--w) / var(--h);
   display: grid; grid-template-columns: repeat(var(--w), 1fr); grid-template-rows: repeat(var(--h), 1fr); gap: 0;
-  border-radius: 8px; overflow: hidden;
+  --rim: #fff;
+  filter: drop-shadow(2px 0 0 var(--rim)) drop-shadow(-2px 0 0 var(--rim)) drop-shadow(0 2px 0 var(--rim)) drop-shadow(0 -2px 0 var(--rim)) drop-shadow(0 6px 10px rgba(42, 36, 64, .18));
 }
-.bead { position: relative; background: color-mix(in srgb, var(--goal) 38%, var(--surface)); }
+:root[data-theme="dark"] .bead-board { --rim: #4A4361; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .bead-board { --rim: #4A4361; } }
+.bead { position: relative; background: color-mix(in srgb, var(--goal) 40%, var(--surface)); }
 .bead::before {
-  content: ''; position: absolute; inset: 7%; border-radius: 50%; background: var(--bead); transition: transform .15s ease;
-  box-shadow: inset -1.5px -2px 0 rgba(0, 0, 0, .18), inset 1.5px 1.5px 0 rgba(255, 255, 255, .35);
+  content: ''; position: absolute; inset: 6%; border-radius: 50%; background: var(--bead);
+  box-shadow: inset -1.5px -2px 0 rgba(0, 0, 0, .2), inset 1.5px 1.5px 0 rgba(255, 255, 255, .38);
 }
 .bead.off { visibility: hidden; }
-.bead.hole::before { background: color-mix(in srgb, var(--goal) 55%, var(--surface)); box-shadow: inset 0 1px 2px rgba(0, 0, 0, .14); }
-.bead.placed::before { animation: pop .3s ease-out; }
-.bead.returned::before { animation: shake .4s ease; outline: 2px solid var(--danger); outline-offset: 1px; }
+.bead.flat { background: var(--goal); box-shadow: inset 0 0 0 .5px rgba(0, 0, 0, .06); }
+.bead.flat::before, .bead.hole::before { display: none; }
+.bead.stuck::before { animation: shake .4s ease; outline: 2px solid var(--danger); outline-offset: 1px; }
+.bead-fly { position: fixed; z-index: 30; border-radius: 50%; pointer-events: none; background: var(--bead); box-shadow: inset -1.5px -2px 0 rgba(0, 0, 0, .2), inset 1.5px 1.5px 0 rgba(255, 255, 255, .38), 0 3px 6px rgba(0, 0, 0, .2); }
 .bead-head { display: flex; align-items: center; gap: 10px; max-width: 100%; }
 .bead-goal { width: 46px; height: 46px; flex: none; padding: 4px; border-radius: 10px; background: var(--surface); box-shadow: 0 1px 0 var(--line); }
 .bead-head .ws-theme { text-align: left; }
@@ -289,6 +293,7 @@ svg { display: block; width: 100%; height: 100%; }
 button.slot { padding: 0; border: 0; cursor: pointer; }
 .slot.sel { outline: 3px solid var(--ink); outline-offset: 2px; transform: scale(1.12); }
 .slot { width: 22px; height: 22px; border-radius: 50%; background: var(--sunk); box-shadow: inset 0 1px 2px rgba(0, 0, 0, .12); }
+.slot.full { background: var(--bead); box-shadow: inset -1.5px -2px 0 rgba(0, 0, 0, .2), inset 1.5px 1.5px 0 rgba(255, 255, 255, .38); }
 
 /* Arrow Go */
 .ag-board {

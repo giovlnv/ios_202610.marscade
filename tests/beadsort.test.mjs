@@ -1,5 +1,6 @@
-import { target, playout, liftGroup, placeGroup } from '../src/js/games/beadsort/engine.js';
+import { target, playout, newState, lift, group, HOLE } from '../src/js/games/beadsort/engine.js';
 import { buildLevel } from '../src/js/games/beadsort/levels.js';
+import { rng } from '../src/js/core/rng.js';
 
 const tiers = [0, 0, 0, 0];
 let slowest = 0;
@@ -7,16 +8,21 @@ for (let level = 1; level <= 60; level++) {
   const t = Date.now();
   const p = buildLevel(level);
   slowest = Math.max(slowest, Date.now() - t);
-  if (!playout(target(p.name), p.board, p.trays * 9)) throw new Error(`bead sort level ${level} cannot be finished`);
+  const goal = target(p.name);
+  if (!playout(goal, p.board, p.trays).ok) throw new Error(`bead sort level ${level} cannot be finished`);
+  if (level <= 20 && !playout(goal, p.board, p.trays, rng(level)).ok) throw new Error(`bead sort level ${level}: random taps got stuck`);
   tiers[p.tier]++;
 }
-console.log('bead sort levels 1-60 finishable. tiers:', tiers, 'slowest ms:', slowest);
+console.log('bead sort levels 1-60 finishable, even with random taps. tiers:', tiers, 'slowest ms:', slowest);
 
 const g = { w: 3, h: 2, cells: Int8Array.from([0, 0, 1, 1, 1, 0]) };
-const st = { board: [1, 1, 0, 0, 1, 1], trays: [] };
-const up = liftGroup(g, st, 0, 9);
-if (up.length !== 2 || st.trays.length !== 2) throw new Error('bead sort: touching wrong beads of one color should lift together');
-st.trays.push(0, 0);
-const down = placeGroup(g, st, 0, 0);
-if (down.length !== 2 || st.board[0] !== 0 || st.board[1] !== 0 || st.trays.join() !== '1,1') throw new Error('bead sort: placing should fill touching spots that need the color');
-console.log('bead sort: group lift and place work');
+const st = newState([1, 1, 0, 0, 1, 0], 2);
+if (group(g, st.board, 0).length !== 2) throw new Error('bead sort: touching wrong beads of one color should move together');
+const moves = lift(g, st, 0);
+if (st.trays[0].c !== 1 || st.trays[0].n !== 2 || moves.length !== 2) throw new Error('bead sort: beads with no spot should go into one tray as a swatch');
+lift(g, st, 2);
+if (st.board[1] !== 0 || st.board[0] !== HOLE) throw new Error('bead sort: beads should fly into the nearest spot that needs them');
+if (st.board[2] !== 1 || st.trays[0].n !== 1) throw new Error('bead sort: tray beads should drop into freed spots');
+lift(g, st, 3);
+if (st.board.join() !== '0,0,1,1,1,0' || st.trays[0].n !== 0) throw new Error('bead sort: tray beads should drop into freed spots');
+console.log('bead sort: group moves, swatch trays and auto-fill work');

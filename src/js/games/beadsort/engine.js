@@ -16,126 +16,131 @@ export function target(name) {
   return { w, h, cells };
 }
 
-export function scramble(goal, fraction, seed) {
-  const r = rng(seed), board = Array.from(goal.cells);
-  const spots = [];
-  goal.cells.forEach((c, i) => { if (c >= 0) spots.push(i); });
-  const picked = r.shuffle(spots).slice(0, Math.max(2, Math.round(spots.length * fraction)));
-  const colors = r.shuffle(picked.map((i) => goal.cells[i]));
-  for (let pass = 0; pass < 3; pass++) {
-    picked.forEach((i, k) => {
-      if (colors[k] !== goal.cells[i]) return;
-      const j = picked.findIndex((p, m) => colors[m] !== goal.cells[i] && colors[k] !== goal.cells[p]);
-      if (j >= 0) [colors[k], colors[j]] = [colors[j], colors[k]];
-    });
+export function scramble(goal, fraction, seed, size = 2) {
+  const r = rng(seed), { w, h, cells } = goal, board = Array.from(cells);
+  const blocks = [];
+  for (let y = 0; y + size <= h; y += size) for (let x = 0; x + size <= w; x += size) {
+    const idx = [];
+    for (let dy = 0; dy < size; dy++) for (let dx = 0; dx < size; dx++) idx.push((y + dy) * w + x + dx);
+    if (idx.every((i) => cells[i] >= 0)) blocks.push(idx);
   }
-  picked.forEach((i, k) => { board[i] = colors[k]; });
+  const picked = r.shuffle(blocks).slice(0, Math.round(blocks.length * fraction));
+  const order = picked.map((_, k) => k);
+  for (let k = order.length - 1; k > 0; k--) { const j = r.int(k); [order[k], order[j]] = [order[j], order[k]]; }
+  picked.forEach((idx, k) => idx.forEach((i, n) => { board[i] = cells[picked[order[k]][n]]; }));
+  const inBlock = new Set(picked.flat());
+  const loose = [];
+  cells.forEach((c, i) => { if (c >= 0 && !inBlock.has(i)) loose.push(i); });
+  const spots = r.shuffle(loose).slice(0, Math.round(loose.length * fraction));
+  const colors = r.shuffle(spots.map((i) => cells[i]));
+  spots.forEach((i, k) => { board[i] = colors[k]; });
   return board;
 }
 
 export const correct = (goal, board) => goal.cells.reduce((n, c, i) => n + (c >= 0 && board[i] === c ? 1 : 0), 0);
 export const total = (goal) => goal.cells.filter((c) => c >= 0).length;
+export const solved = (goal, st) => st.board.every((c, i) => c === goal.cells[i]);
+export const newState = (board, trays) => ({ board: board.slice(), trays: Array.from({ length: trays }, () => ({ c: -1, n: 0 })) });
 
-export function settle(goal, st) {
-  const placed = [];
-  for (let changed = true; changed;) {
-    changed = false;
-    for (let i = 0; i < st.board.length; i++) {
-      if (st.board[i] !== HOLE) continue;
-      const k = st.trays.indexOf(goal.cells[i]);
-      if (k < 0) continue;
-      st.trays.splice(k, 1);
-      st.board[i] = goal.cells[i];
-      placed.push(i);
-      changed = true;
-    }
-  }
-  return placed;
-}
+const wrong = (goal, board, i) => board[i] >= 0 && board[i] !== goal.cells[i];
+const dist = (w, a, b) => Math.abs((a % w) - (b % w)) + Math.abs(Math.floor(a / w) - Math.floor(b / w));
 
-export function lift(st, i, cap) {
-  if (st.board[i] < 0 || st.trays.length >= cap) return false;
-  st.trays.push(st.board[i]);
-  st.board[i] = HOLE;
-  return true;
-}
-
-export function group(goal, board, i, test, limit) {
-  const { w } = goal, out = [i], seen = new Set(out);
-  for (let q = 0; q < out.length && out.length < limit; q++) {
+export function group(goal, board, i) {
+  const { w } = goal, c = board[i], out = [i], seen = new Set(out);
+  for (let q = 0; q < out.length; q++) {
     const j = out[q], x = j % w;
     for (const n of [j - w, j + w, x > 0 ? j - 1 : -1, x < w - 1 ? j + 1 : -1]) {
-      if (n < 0 || n >= board.length || seen.has(n) || !test(n)) continue;
+      if (n < 0 || n >= board.length || seen.has(n) || board[n] !== c || !wrong(goal, board, n)) continue;
       seen.add(n);
       out.push(n);
-      if (out.length >= limit) break;
     }
   }
   return out;
 }
 
-export function liftGroup(goal, st, i, cap) {
+function holeFor(goal, board, c, near) {
+  let best = -1, bd = Infinity;
+  for (let j = 0; j < board.length; j++) {
+    if (board[j] !== HOLE || goal.cells[j] !== c) continue;
+    const d = dist(goal.w, j, near);
+    if (d < bd) { bd = d; best = j; }
+  }
+  return best;
+}
+
+function trayFor(st, c) {
+  const k = st.trays.findIndex((t) => t.c === c && t.n < SLOTS);
+  return k >= 0 ? k : st.trays.findIndex((t) => t.n === 0);
+}
+
+export function canLift(goal, st, i) {
+  if (!wrong(goal, st.board, i)) return false;
   const c = st.board[i];
-  if (c < 0 || c === goal.cells[i] || st.trays.length >= cap) return [];
-  const g = group(goal, st.board, i, (n) => st.board[n] === c && goal.cells[n] !== c, cap - st.trays.length);
-  g.forEach((n) => lift(st, n, cap));
-  return g;
+  return holeFor(goal, st.board, c, i) >= 0 || trayFor(st, c) >= 0;
 }
 
-export function placeGroup(goal, st, c, i) {
-  if (st.board[i] !== HOLE || goal.cells[i] !== c) return [];
-  const have = st.trays.filter((t) => t === c).length;
-  const g = have ? group(goal, st.board, i, (n) => st.board[n] === HOLE && goal.cells[n] === c, have) : [];
-  g.forEach((n) => place(goal, st, st.trays.indexOf(c), n));
-  return g;
+export function settle(goal, st) {
+  const moves = [];
+  st.trays.forEach((t, k) => {
+    while (t.n > 0) {
+      const h = holeFor(goal, st.board, t.c, 0);
+      if (h < 0) break;
+      st.board[h] = t.c;
+      t.n--;
+      moves.push({ tray: k, to: h, c: t.c });
+    }
+    if (!t.n) t.c = -1;
+  });
+  return moves;
 }
 
-export function place(goal, st, k, i) {
-  if (st.board[i] !== HOLE || st.trays[k] !== goal.cells[i]) return false;
-  st.board[i] = st.trays[k];
-  st.trays.splice(k, 1);
-  return true;
-}
-
-export function canPlaceAny(goal, st) {
-  return st.board.some((c, i) => c === HOLE && st.trays.includes(goal.cells[i]));
-}
-
-export const jammed = (goal, st, cap) => st.trays.length >= cap && !canPlaceAny(goal, st);
-
-export function unjam(st) {
-  const holes = [];
-  st.board.forEach((c, i) => { if (c === HOLE) holes.push(i); });
-  holes.forEach((i, k) => { st.board[i] = st.trays[k]; });
-  st.trays = [];
-  return holes;
-}
-
-export const solved = (goal, st) => st.board.every((c, i) => c === goal.cells[i]);
-
-function misplaced(goal, st) {
-  const out = [];
-  st.board.forEach((c, i) => { if (c >= 0 && c !== goal.cells[i]) out.push(i); });
-  return out;
+export function lift(goal, st, i) {
+  if (!wrong(goal, st.board, i)) return [];
+  const c = st.board[i], moves = [];
+  for (const j of group(goal, st.board, i)) {
+    const h = holeFor(goal, st.board, c, j);
+    if (h >= 0) {
+      st.board[j] = HOLE;
+      st.board[h] = c;
+      moves.push({ from: j, to: h, c });
+      continue;
+    }
+    const k = trayFor(st, c);
+    if (k < 0) break;
+    st.board[j] = HOLE;
+    st.trays[k].c = c;
+    st.trays[k].n++;
+    moves.push({ from: j, tray: k, c });
+  }
+  return moves.concat(settle(goal, st));
 }
 
 export function bestLift(goal, st) {
-  const wrong = misplaced(goal, st);
-  const holeTargets = new Set();
-  st.board.forEach((c, i) => { if (c === HOLE) holeTargets.add(goal.cells[i]); });
-  return wrong.find((i) => holeTargets.has(st.board[i]))
-    ?? wrong.find((i) => st.trays.includes(goal.cells[i]))
-    ?? wrong[0];
+  let best = -1, score = -1;
+  const seen = new Set();
+  st.board.forEach((c, i) => {
+    if (seen.has(i) || !wrong(goal, st.board, i)) return;
+    const g = group(goal, st.board, i);
+    g.forEach((j) => seen.add(j));
+    if (!canLift(goal, st, i)) return;
+    const s = (holeFor(goal, st.board, c, i) >= 0 ? 1000 : 0) + g.length;
+    if (s > score) { score = s; best = i; }
+  });
+  return best < 0 ? undefined : best;
 }
 
-export function playout(goal, board, cap, r) {
-  const st = { board: board.slice(), trays: [] };
-  for (let guard = 0; guard < 5000 && !solved(goal, st); guard++) {
-    const wrong = misplaced(goal, st);
-    const i = r ? wrong[r.int(wrong.length)] : bestLift(goal, st);
-    lift(st, i, cap);
-    settle(goal, st);
-    if (!solved(goal, st) && st.trays.length >= cap) return false;
+export function playout(goal, board, trays, r) {
+  const st = newState(board, trays);
+  let taps = 0;
+  for (; taps < 20000 && !solved(goal, st); taps++) {
+    let i = bestLift(goal, st);
+    if (r) {
+      const options = [];
+      st.board.forEach((_, j) => { if (canLift(goal, st, j)) options.push(j); });
+      if (options.length) i = options[r.int(options.length)];
+    }
+    if (i === undefined) return { ok: false, taps };
+    lift(goal, st, i);
   }
-  return solved(goal, st);
+  return { ok: solved(goal, st), taps };
 }

@@ -3,7 +3,7 @@ import { haptic } from '../../core/native.js';
 import { h, toast } from '../../core/ui.js';
 import { createShell, TIER_LABEL } from '../../core/shell.js';
 import { stats } from '../../core/stats.js';
-import { ART, SLOTS, HOLE, target, liftGroup, placeGroup, settle, jammed, unjam, solved, correct, total, bestLift } from './engine.js';
+import { ART, SLOTS, HOLE, target, newState, lift, canLift, solved, correct, total, bestLift } from './engine.js';
 import { buildLevel } from './levels.js';
 
 const shade = (hex) => (parseInt(hex.slice(1, 3), 16) + parseInt(hex.slice(3, 5), 16) + parseInt(hex.slice(5, 7), 16) < 90 ? 'var(--bead-k)' : hex);
@@ -15,15 +15,14 @@ const art = `<svg viewBox="0 0 40 40" aria-hidden="true">
 </svg>`;
 const clock = `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8" fill="none" stroke="currentColor" stroke-width="2.1"/><path d="M12 9 V13 L15 15 M9.5 2.5 H14.5" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/></svg>`;
 const flake = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 V21.5 M3.8 7.2 L20.2 16.8 M3.8 16.8 L20.2 7.2 M9.5 3.8 L12 6.3 L14.5 3.8 M9.5 20.2 L12 17.7 L14.5 20.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-const autoIc = `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="7" cy="17" r="3" fill="currentColor"/><circle cx="17" cy="7" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.5 14.5 L14.5 9.5 M11 9.5 H14.5 V13" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const bulb = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 17 H15 M10 20.5 H14 M8.5 14 Q6 12 6 9 A6 6 0 0 1 18 9 Q18 12 15.5 14 L15 17 H9 Z" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
 
 const rules = `<ul class="rules">
-  <li><span class="rule-ic">${art}</span><span><b>The picture is scrambled.</b> Rebuild it to match the small preview.</span></li>
-  <li><span class="rule-ic">${art}</span><span><b>Tap a bead</b> to lift it and its touching beads of the same color into the trays. Then tap a color in the trays and an empty spot: the touching spots that need it fill too.</span></li>
+  <li><span class="rule-ic">${art}</span><span><b>The picture is scrambled.</b> Beads in the right place lie flat; loose round beads are in the wrong place.</span></li>
+  <li><span class="rule-ic">${art}</span><span><b>Tap a round bead.</b> It and its touching beads of the same color fly to the spots that need them. Extra beads wait in a tray, one color per tray, and drop in by themselves when a spot opens up.</span></li>
   <li><span class="rule-ic">${clock}</span><span><b>Beat the clock.</b> Finish the picture before the timer runs out. There are no lives here.</span></li>
 </ul>
-<p class="sheet-note">The finished picture shows faintly under the beads, so empty spots show the color they need. If the trays fill up with beads that fit nowhere, they go back to the picture. Hints: show a bead, auto-place, and freeze the timer for 20 seconds.</p>`;
+<p class="sheet-note">Empty spots show a faded version of the color they need. Hints: show a bead and freeze the timer for 20 seconds.</p>`;
 
 const load = () => ({ level: 1, board: null, trays: [], solved: 0, left: null, ...store.get('beadsort', {}) });
 const save = (s) => store.set('beadsort', s);
@@ -40,9 +39,9 @@ export default {
 
 function mount(root, { exit }) {
   const saved = load();
-  let puz, goal, st, cap, colors, beadEls = [], sel = -1, left = 0, frozenUntil = 0, timer = null;
+  let puz, goal, st, colors, beadEls = [], left = 0, frozenUntil = 0, timer = null, flying = 0;
 
-  const reset = () => { st = { board: puz.board.slice(), trays: [] }; sel = -1; left = puz.seconds; frozenUntil = 0; render(); };
+  const reset = () => { st = newState(puz.board, puz.trays); left = puz.seconds; frozenUntil = 0; clearFlying(); render(); };
   const shell = createShell(root, {
     name: 'Bead Sort',
     rules,
@@ -66,7 +65,6 @@ function mount(root, { exit }) {
   const trays = h('<div class="trays" aria-label="Trays"></div>');
   shell.controls.append(trays, h(`<div class="ms-tools bead-tools">
     <button class="tool" data-tool="hint"><span class="tool-ic">${bulb}</span><span>Show a bead</span></button>
-    <button class="tool" data-tool="auto"><span class="tool-ic">${autoIc}</span><span>Auto-place</span></button>
     <button class="tool" data-tool="freeze"><span class="tool-ic">${flake}</span><span>Freeze time</span></button>
   </div>`));
 
@@ -80,11 +78,11 @@ function mount(root, { exit }) {
       if (level !== saved.level || !shell.el.isConnected) return;
       puz = buildLevel(level);
       goal = target(puz.name);
-      cap = puz.trays * SLOTS;
       const info = ART[puz.name];
       colors = info.title ? info.palette.slice() : info.palette.map(shade);
       caption.innerHTML = info.title ? `${info.title}<small>${info.artist}, ${info.year}</small>` : title(puz.name);
-      st = saved.board?.length === puz.board.length ? { board: saved.board.slice(), trays: saved.trays.slice() } : { board: puz.board.slice(), trays: [] };
+      const ok = saved.board?.length === puz.board.length && saved.trays?.length === puz.trays && saved.trays.every((t) => typeof t === 'object');
+      st = ok ? { board: saved.board.slice(), trays: saved.trays.map((t) => ({ ...t })) } : newState(puz.board, puz.trays);
       shell.setTier(puz.tier);
       left = saved.left ?? puz.seconds;
       frozenUntil = 0;
@@ -102,24 +100,18 @@ function mount(root, { exit }) {
     }, 30);
   }
 
-  function render(flash = [], cls = 'placed') {
+  const hide = new Set(), hideSlots = new Set();
+  function render() {
     st.board.forEach((c, i) => {
       if (goal.cells[i] < 0) return;
       const el = beadEls[i];
-      el.classList.toggle('hole', c === HOLE);
-      el.style.setProperty('--bead', c >= 0 ? colors[c] : 'transparent');
+      const flat = c === goal.cells[i] && !hide.has(i);
+      el.classList.toggle('flat', flat);
+      el.classList.toggle('hole', c === HOLE || hide.has(i));
+      el.style.setProperty('--bead', c >= 0 && !flat ? colors[c] : 'transparent');
     });
-    flash.forEach((i) => {
-      beadEls[i].classList.remove(cls);
-      void beadEls[i].offsetWidth;
-      beadEls[i].classList.add(cls);
-    });
-    trays.replaceChildren(...Array.from({ length: puz.trays }, (_, t) => h(`<div class="tray">${Array.from({ length: SLOTS }, (_, k) => {
-      const n = t * SLOTS + k, c = st.trays[n];
-      return c !== undefined
-        ? `<button class="slot full${c === sel ? ' sel' : ''}" data-c="${c}" style="background:${colors[c]}" aria-label="Tray color ${c + 1}"></button>`
-        : '<span class="slot"></span>';
-    }).join('')}</div>`)));
+    trays.replaceChildren(...st.trays.map((t, k) => h(`<div class="tray" data-k="${k}">${Array.from({ length: SLOTS }, (_, j) =>
+      `<span class="slot${j < t.n && !hideSlots.has(`${k}:${j}`) ? ' full' : ''}"${j < t.n ? ` style="--bead:${colors[t.c]}"` : ''}></span>`).join('')}</div>`)));
     const p = Math.floor((correct(goal, st.board) / total(goal)) * 100);
     bar.style.setProperty('--w', `${p}%`);
     pct.textContent = `${p}%`;
@@ -128,7 +120,7 @@ function mount(root, { exit }) {
     saved.left = left;
     save(saved);
     showTime();
-    if (!shell.won && solved(goal, st)) win();
+    if (!flying && !shell.won && solved(goal, st)) win();
   }
 
   function showTime() {
@@ -154,52 +146,66 @@ function mount(root, { exit }) {
   }
   timer = setInterval(tick, 250);
 
-  function wrongSpot(i) {
-    render([i], 'returned');
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  const flyers = new Set();
+  function clearFlying() { flyers.forEach((f) => f.remove()); flyers.clear(); flying = 0; hide.clear(); hideSlots.clear(); }
+
+  function animate(moves, before) {
+    if (reduceMotion.matches || !moves.length) return render();
+    const rect = (el) => el?.getBoundingClientRect();
+    const fill = before.trays.map((t) => t.n);
+    const pending = moves.map((m) => {
+      const from = m.from !== undefined ? rect(beadEls[m.from]) : rect(trays.children[m.tray]);
+      let slot = null;
+      if (m.to === undefined) slot = `${m.tray}:${fill[m.tray]++}`;
+      return { m, from, slot };
+    });
+    pending.forEach((p) => { if (p.slot) hideSlots.add(p.slot); else hide.add(p.m.to); });
+    render();
+    const delay = Math.min(28, 420 / moves.length);
+    flying++;
+    let left = pending.length;
+    pending.forEach((p, n) => {
+      const to = p.slot ? rect(trays.children[p.m.tray]?.children[+p.slot.split(':')[1]]) : rect(beadEls[p.m.to]);
+      const from = p.from;
+      const size = Math.min(from.width, to.width) * 0.86 || 12;
+      const f = h('<span class="bead-fly"></span>');
+      f.style.cssText = `width:${size}px;height:${size}px;left:${from.left + from.width / 2 - size / 2}px;top:${from.top + from.height / 2 - size / 2}px;--bead:${colors[p.m.c]}`;
+      document.body.append(f);
+      flyers.add(f);
+      const dx = to.left + to.width / 2 - (from.left + from.width / 2), dy = to.top + to.height / 2 - (from.top + from.height / 2);
+      const a = f.animate([{ transform: 'translate(0,0) scale(1)' }, { transform: `translate(${dx * 0.5}px, ${dy * 0.5 - 30}px) scale(1.15)`, offset: 0.5 }, { transform: `translate(${dx}px, ${dy}px) scale(1)` }],
+        { duration: 340, delay: n * delay, easing: 'ease-in-out', fill: 'forwards' });
+      a.finished.catch(() => {}).then(() => {
+        if (!flyers.has(f)) return;
+        f.remove();
+        flyers.delete(f);
+        if (p.slot) hideSlots.delete(p.slot); else hide.delete(p.m.to);
+        if (--left === 0) { flying--; haptic.place(); }
+        render();
+      });
+    });
   }
 
   function pick(i, hinted) {
-    if (goal.cells[i] < 0) return;
-    if (st.board[i] === HOLE) {
-      if (sel < 0) return toast('Pick a color from the trays first');
-      if (goal.cells[i] !== sel) {
-        toast('That spot needs another color');
-        return wrongSpot(i);
-      }
-      const placed = placeGroup(goal, st, sel, i);
-      if (!st.trays.includes(sel)) sel = -1;
-      haptic.place();
-      return render(placed);
+    if (goal.cells[i] < 0 || st.board[i] === goal.cells[i] || st.board[i] === HOLE) return;
+    if (!canLift(goal, st, i)) {
+      beadEls[i].classList.remove('stuck');
+      void beadEls[i].offsetWidth;
+      beadEls[i].classList.add('stuck');
+      return toast('No spot or tray free for this color yet');
     }
-    if (st.board[i] === goal.cells[i]) return;
-    if (st.trays.length >= cap) return toast('The trays are full');
-    const lifted = liftGroup(goal, st, i, cap);
+    const before = { board: st.board.slice(), trays: st.trays.map((t) => ({ ...t })) };
+    const moves = lift(goal, st, i);
+    if (hinted) saved.hinted = true;
     haptic.tap();
-    render(hinted ? lifted : []);
-    if (jammed(goal, st, cap)) {
-      setTimeout(() => {
-        const back = unjam(st);
-        sel = -1;
-        toast('No empty spot fits these beads, so they went back');
-        render(back, 'returned');
-      }, 450);
-    }
+    animate(moves, before);
   }
 
   function hint() {
     const i = bestLift(goal, st);
     if (i === undefined) return;
-    saved.hinted = true;
     pick(i, true);
-  }
-
-  function autoPlace() {
-    const placed = settle(goal, st);
-    if (!placed.length) return toast('No tray bead fits an empty spot yet');
-    saved.hinted = true;
-    sel = -1;
-    haptic.place();
-    render(placed);
   }
 
   function win() {
@@ -210,7 +216,7 @@ function mount(root, { exit }) {
     const level = saved.level;
     saved.level += 1;
     saved.board = null;
-    saved.trays = [];
+    saved.trays = null;
     saved.left = null;
     save(saved);
     const info = ART[puz.name];
@@ -223,15 +229,8 @@ function mount(root, { exit }) {
   });
   shell.controls.addEventListener('click', (e) => {
     if (shell.won || !puz) return;
-    const slot = e.target.closest('.slot.full');
-    if (slot) {
-      sel = sel === +slot.dataset.c ? -1 : +slot.dataset.c;
-      haptic.tap();
-      return render();
-    }
     const tool = e.target.closest('[data-tool]')?.dataset.tool;
     if (tool === 'hint') hint();
-    if (tool === 'auto') autoPlace();
     if (tool === 'freeze') {
       saved.hinted = true;
       frozenUntil = Date.now() + 20000;
@@ -242,5 +241,5 @@ function mount(root, { exit }) {
   });
 
   startLevel();
-  return { destroy: () => { clearInterval(timer); shell.el.remove(); } };
+  return { destroy: () => { clearInterval(timer); clearFlying(); shell.el.remove(); } };
 }
