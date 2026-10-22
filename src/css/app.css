@@ -271,6 +271,12 @@ svg { display: block; width: 100%; height: 100%; }
 .bead.flat { background: var(--goal); box-shadow: inset 0 0 0 .5px rgba(0, 0, 0, .06); }
 .bead.flat::before, .bead.hole::before { display: none; }
 .bead.stuck::before { animation: shake .4s ease; outline: 2px solid var(--danger); outline-offset: 1px; }
+.bead.hole.stuck { animation: shake .4s ease; outline: 2px solid var(--danger); outline-offset: -2px; }
+.bead.sel::before { transform: translateY(-14%) scale(1.08); box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ink), inset -1.5px -2px 0 rgba(0, 0, 0, .2); z-index: 1; }
+.bead::before { transition: transform .12s ease; }
+.tray { border: 0; cursor: pointer; }
+.tray.sel { outline: 3px solid var(--ink); outline-offset: 2px; transform: translateY(-4px); }
+.tray.stuck { animation: shake .4s ease; outline: 3px solid var(--danger); outline-offset: 2px; }
 .bead-fly { position: fixed; z-index: 30; border-radius: 50%; pointer-events: none; background: var(--bead); box-shadow: inset -1.5px -2px 0 rgba(0, 0, 0, .2), inset 1.5px 1.5px 0 rgba(255, 255, 255, .38), 0 3px 6px rgba(0, 0, 0, .2); }
 .bead-head { display: flex; align-items: center; gap: 10px; max-width: 100%; }
 .bead-goal { width: 46px; height: 46px; flex: none; padding: 4px; border-radius: 10px; background: var(--surface); box-shadow: 0 1px 0 var(--line); }

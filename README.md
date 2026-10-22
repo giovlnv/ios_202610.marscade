@@ -124,11 +124,12 @@ All games: every 5th level is hard, every 10th is super hard, and the levels in 
 
 ### Bead Sort
 Modeled on Color Sort Jewel.
-- The picture starts scrambled in blocks. Beads in the right place lie flat, like an ironed bead picture; loose round beads are in the wrong place; empty spots show a faded version of the color they need.
-- Tap a round bead: it and its touching beads of the same color fly to the nearest spots that need them. Beads with no spot go into a tray. Each of the 2 trays holds up to 9 beads of one color, and tray beads drop into spots by themselves as they open up.
-- Levels can never get stuck: an empty spot always has a bead somewhere that fits it. The challenge is the timer, which is set from how many taps a good player needs.
-- Hints: Show a bead (moves the best group) and Freeze time (20 seconds).
-- Easy and medium levels: pixel art from the free CC0 Dungeon Crawl tile set. Hard and super hard: an archive of 52 public-domain paintings.
+- Every bead starts in the wrong place (pictures are scrambled in blocks). Beads in the right place lie flat, like an ironed bead picture; empty spots show a faded version of the color they need.
+- Tap a bead to pick it up with its touching beads of the same color, then tap a tray to store them or an empty spot of their color to place them. Tap a tray to pick its beads up and place them the same way.
+- Each of the 2 trays holds up to 9 beads of one color.
+- Levels can never get stuck: an empty spot always has a fitting bead somewhere. The challenge is the timer, set from how many taps a good player needs.
+- Hints: Show a move and Freeze time (20 seconds).
+- Easy and medium levels: pixel art from the free CC0 Dungeon Crawl tile set. Hard and super hard: an archive of 52 public-domain paintings, smoothed a little so color areas are bigger.
 - Sources and licenses are in [CREDITS.md](CREDITS.md). To rebuild the pictures: `python3 tools/build_bead_art.py <CC0-Dungeon-Pack folder>` and `python3 tools/build_painting_art.py <paintings folder>`.
 
 ### Arrow Go

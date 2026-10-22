@@ -3,7 +3,7 @@ import { haptic } from '../../core/native.js';
 import { h, toast } from '../../core/ui.js';
 import { createShell, TIER_LABEL } from '../../core/shell.js';
 import { stats } from '../../core/stats.js';
-import { ART, SLOTS, HOLE, target, newState, lift, canLift, solved, correct, total, bestLift } from './engine.js';
+import { ART, SLOTS, HOLE, target, newState, group, wrong, trayFits, toTray, toHoles, bestMove, apply, solved, correct, total } from './engine.js';
 import { buildLevel } from './levels.js';
 
 const shade = (hex) => (parseInt(hex.slice(1, 3), 16) + parseInt(hex.slice(3, 5), 16) + parseInt(hex.slice(5, 7), 16) < 90 ? 'var(--bead-k)' : hex);
@@ -18,11 +18,11 @@ const flake = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 V21.
 const bulb = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 17 H15 M10 20.5 H14 M8.5 14 Q6 12 6 9 A6 6 0 0 1 18 9 Q18 12 15.5 14 L15 17 H9 Z" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
 
 const rules = `<ul class="rules">
-  <li><span class="rule-ic">${art}</span><span><b>The picture is scrambled.</b> Beads in the right place lie flat; loose round beads are in the wrong place.</span></li>
-  <li><span class="rule-ic">${art}</span><span><b>Tap a round bead.</b> It and its touching beads of the same color fly to the spots that need them. Extra beads wait in a tray, one color per tray, and drop in by themselves when a spot opens up.</span></li>
+  <li><span class="rule-ic">${art}</span><span><b>Every bead starts in the wrong place.</b> Rebuild the picture: beads in the right place lie flat, and empty spots show a faded version of the color they need.</span></li>
+  <li><span class="rule-ic">${art}</span><span><b>Tap a bead</b> to pick it up with its touching beads of the same color. Then tap a tray to store them, or an empty spot of their color to place them.</span></li>
   <li><span class="rule-ic">${clock}</span><span><b>Beat the clock.</b> Finish the picture before the timer runs out. There are no lives here.</span></li>
 </ul>
-<p class="sheet-note">Empty spots show a faded version of the color they need. Hints: show a bead and freeze the timer for 20 seconds.</p>`;
+<p class="sheet-note">Each tray holds up to 9 beads of one color. Tap a tray to pick its beads up, then tap a spot that needs them. Hints: show a move and freeze the timer for 20 seconds.</p>`;
 
 const load = () => ({ level: 1, board: null, trays: [], solved: 0, left: null, ...store.get('beadsort', {}) });
 const save = (s) => store.set('beadsort', s);
@@ -39,9 +39,9 @@ export default {
 
 function mount(root, { exit }) {
   const saved = load();
-  let puz, goal, st, colors, beadEls = [], left = 0, frozenUntil = 0, timer = null, flying = 0;
+  let puz, goal, st, colors, beadEls = [], left = 0, frozenUntil = 0, timer = null, flying = 0, sel = null;
 
-  const reset = () => { st = newState(puz.board, puz.trays); left = puz.seconds; frozenUntil = 0; clearFlying(); render(); };
+  const reset = () => { sel = null; st = newState(puz.board, puz.trays); left = puz.seconds; frozenUntil = 0; clearFlying(); render(); };
   const shell = createShell(root, {
     name: 'Bead Sort',
     rules,
@@ -64,7 +64,7 @@ function mount(root, { exit }) {
   const bar = wrap.querySelector('.bead-progress span'), pct = wrap.querySelector('.bead-progress b');
   const trays = h('<div class="trays" aria-label="Trays"></div>');
   shell.controls.append(trays, h(`<div class="ms-tools bead-tools">
-    <button class="tool" data-tool="hint"><span class="tool-ic">${bulb}</span><span>Show a bead</span></button>
+    <button class="tool" data-tool="hint"><span class="tool-ic">${bulb}</span><span>Show a move</span></button>
     <button class="tool" data-tool="freeze"><span class="tool-ic">${flake}</span><span>Freeze time</span></button>
   </div>`));
 
@@ -109,9 +109,10 @@ function mount(root, { exit }) {
       el.classList.toggle('flat', flat);
       el.classList.toggle('hole', c === HOLE || hide.has(i));
       el.style.setProperty('--bead', c >= 0 && !flat ? colors[c] : 'transparent');
+      el.classList.toggle('sel', sel?.cells?.includes(i) ?? false);
     });
-    trays.replaceChildren(...st.trays.map((t, k) => h(`<div class="tray" data-k="${k}">${Array.from({ length: SLOTS }, (_, j) =>
-      `<span class="slot${j < t.n && !hideSlots.has(`${k}:${j}`) ? ' full' : ''}"${j < t.n ? ` style="--bead:${colors[t.c]}"` : ''}></span>`).join('')}</div>`)));
+    trays.replaceChildren(...st.trays.map((t, k) => h(`<button class="tray${sel?.tray === k ? ' sel' : ''}" data-k="${k}" aria-label="Tray ${k + 1}: ${t.n} beads">${Array.from({ length: SLOTS }, (_, j) =>
+      `<span class="slot${j < t.n && !hideSlots.has(`${k}:${j}`) ? ' full' : ''}"${j < t.n ? ` style="--bead:${colors[t.c]}"` : ''}></span>`).join('')}</button>`)));
     const p = Math.floor((correct(goal, st.board) / total(goal)) * 100);
     bar.style.setProperty('--w', `${p}%`);
     pct.textContent = `${p}%`;
@@ -187,25 +188,58 @@ function mount(root, { exit }) {
     });
   }
 
-  function pick(i, hinted) {
-    if (goal.cells[i] < 0 || st.board[i] === goal.cells[i] || st.board[i] === HOLE) return;
-    if (!canLift(goal, st, i)) {
-      beadEls[i].classList.remove('stuck');
-      void beadEls[i].offsetWidth;
-      beadEls[i].classList.add('stuck');
-      return toast('No spot or tray free for this color yet');
-    }
-    const before = { board: st.board.slice(), trays: st.trays.map((t) => ({ ...t })) };
-    const moves = lift(goal, st, i);
-    if (hinted) saved.hinted = true;
+  function bump(el, msg) {
+    el.classList.remove('stuck');
+    void el.offsetWidth;
+    el.classList.add('stuck');
+    if (msg) toast(msg);
+  }
+
+  function run(moves, before) {
+    sel = null;
+    if (!moves.length) return render();
     haptic.tap();
     animate(moves, before);
   }
 
+  const snapshot = () => ({ board: st.board.slice(), trays: st.trays.map((t) => ({ ...t })) });
+
+  function pick(i) {
+    if (goal.cells[i] < 0 || flying) return;
+    if (st.board[i] === HOLE) {
+      if (!sel) return bump(beadEls[i], 'Pick some beads or a tray first');
+      const c = sel.cells ? st.board[sel.cells[0]] : st.trays[sel.tray].c;
+      if (goal.cells[i] !== c) return bump(beadEls[i], 'That spot needs another color');
+      const before = snapshot();
+      return run(toHoles(goal, st, sel.cells ?? sel.tray, i), before);
+    }
+    if (!wrong(goal, st.board, i)) { sel = null; return render(); }
+    sel = sel?.cells?.includes(i) ? null : { cells: group(goal, st.board, i) };
+    haptic.tap();
+    render();
+  }
+
+  function tapTray(k) {
+    if (flying) return;
+    const t = st.trays[k], el = trays.children[k];
+    if (sel?.cells) {
+      const c = st.board[sel.cells[0]];
+      if (!trayFits(st, k, c)) return bump(el, t.n >= SLOTS ? 'This tray is full' : 'Each tray holds one color');
+      const before = snapshot();
+      return run(toTray(st, sel.cells, k), before);
+    }
+    sel = sel?.tray === k || !t.n ? null : { tray: k };
+    haptic.tap();
+    render();
+  }
+
   function hint() {
-    const i = bestLift(goal, st);
-    if (i === undefined) return;
-    pick(i, true);
+    if (flying) return;
+    const m = bestMove(goal, st);
+    if (!m) return;
+    saved.hinted = true;
+    const before = snapshot();
+    run(apply(goal, st, m), before);
   }
 
   function win() {
@@ -229,6 +263,8 @@ function mount(root, { exit }) {
   });
   shell.controls.addEventListener('click', (e) => {
     if (shell.won || !puz) return;
+    const tray = e.target.closest('.tray');
+    if (tray) return tapTray(+tray.dataset.k);
     const tool = e.target.closest('[data-tool]')?.dataset.tool;
     if (tool === 'hint') hint();
     if (tool === 'freeze') {

@@ -1,12 +1,12 @@
 import { rng, hashSeed } from '../../core/rng.js';
-import { target, scramble, playout, PAINTING_KEYS, SPRITE_KEYS } from './engine.js';
+import { target, scramble, playout, correct, PAINTING_KEYS, SPRITE_KEYS } from './engine.js';
 
 export const TRAYS = 2;
 const SPECS = [
-  { pool: SPRITE_KEYS, fraction: 0.7, size: 3, pace: 4 },
-  { pool: SPRITE_KEYS, fraction: 0.95, size: 2, pace: 3.5 },
-  { pool: PAINTING_KEYS, fraction: 0.4, size: 3, pace: 3 },
-  { pool: PAINTING_KEYS, fraction: 0.6, size: 3, pace: 2.6 },
+  { pool: SPRITE_KEYS, size: 3, pace: 2.4 },
+  { pool: SPRITE_KEYS, size: 2, pace: 2 },
+  { pool: PAINTING_KEYS, size: 3, pace: 1.5 },
+  { pool: PAINTING_KEYS, size: 2, pace: 1.3 },
 ];
 
 export function levelSpec(level) {
@@ -21,8 +21,13 @@ const cache = new Map();
 export function buildLevel(level) {
   if (cache.has(level)) return cache.get(level);
   const tier = levelSpec(level), spec = SPECS[tier], r = rng(hashSeed('beadsort', level));
-  const name = r.pick(spec.pool), goal = target(name);
-  const board = scramble(goal, spec.fraction, hashSeed('beadsort-mix', level), spec.size);
+  let name, goal, board;
+  for (let k = 0; k < 20; k++) {
+    name = r.pick(spec.pool);
+    goal = target(name);
+    board = scramble(goal, hashSeed('beadsort-mix', level, k), spec.size);
+    if (!correct(goal, board)) break;
+  }
   const { taps } = playout(goal, board, TRAYS);
   const out = { level, tier, name, board, trays: TRAYS, taps, seconds: Math.round((taps * spec.pace + 20) / 5) * 5 };
   cache.set(level, out);
