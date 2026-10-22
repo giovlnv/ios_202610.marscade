@@ -309,7 +309,8 @@ button.slot { padding: 0; border: 0; cursor: pointer; }
 .bb-cell.on { box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .16), inset 0 2px 0 rgba(255, 255, 255, .3); }
 .bb-cell.ghost { background: color-mix(in srgb, var(--ghost) 55%, transparent); }
 .bb-cell.hint { outline: 3px solid var(--rust); outline-offset: -2px; animation: agglow 0.8s ease-in-out 2; }
-.bb-cell.clearing { animation: glow .45s ease-out; background: #fff; }
+.bb-cell.clearing { animation: bbclear .45s ease-out; }
+@keyframes bbclear { from { background: #fff; transform: scale(1.06); } to { background: var(--sunk); transform: none; } }
 .bb-tray { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; touch-action: none; }
 .bb-slot { height: 110px; display: grid; place-items: center; border-radius: 16px; background: var(--surface); box-shadow: 0 1px 0 var(--line); cursor: grab; }
 .bb-slot.lifted .bb-piece { opacity: .25; }

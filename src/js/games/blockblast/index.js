@@ -87,6 +87,7 @@ function mount(root, { exit }, isEndless) {
   const board = wrap.querySelector('.bb-board');
   for (let i = 0; i < N * N; i++) board.append(h('<span class="bb-cell"></span>'));
   cells = [...board.children];
+  board.addEventListener('animationend', (e) => e.target.classList.remove('clearing'));
   const tray = h('<div class="bb-tray" aria-label="Pieces"></div>');
   shell.controls.append(tray, h(`<div class="ws-tools"><button class="tool" data-tool="hint"><span class="tool-ic">${bulb}</span><span>Show a spot</span></button></div>`));
 
@@ -125,13 +126,10 @@ function mount(root, { exit }, isEndless) {
     g.board.forEach((v, i) => {
       cells[i].style.background = v >= 0 ? colorOf(v) : '';
       cells[i].classList.toggle('on', v >= 0);
-      cells[i].classList.remove('ghost', 'bad', 'hint');
+      cells[i].classList.remove('ghost', 'bad', 'hint', 'clearing');
     });
-    flash.forEach((i) => {
-      cells[i].classList.remove('clearing');
-      void cells[i].offsetWidth;
-      cells[i].classList.add('clearing');
-    });
+    if (flash.length) void cells[0].offsetWidth;
+    flash.forEach((i) => { if (g.board[i] < 0) cells[i].classList.add('clearing'); });
     tray.replaceChildren(...g.pieces.map((p, k) => h(`<div class="bb-slot" data-k="${k}">${p >= 0 ? pieceHtml(p, g.colors[k], 18) : ''}</div>`)));
     wrap.querySelector('.bb-score b').textContent = Math.floor(g.score);
     const pct = Math.min(100, Math.floor((g.score / spec.target) * 100));
