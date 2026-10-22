@@ -135,7 +135,7 @@ svg { display: block; width: 100%; height: 100%; }
 .cell[data-m="2"] .mark svg { width: 82%; height: 82%; animation: pop .22s ease-out; filter: drop-shadow(0 2px 0 rgba(0, 0, 0, .12)); }
 .cell.bad::after { content: ''; position: absolute; inset: 0; border-radius: inherit; border: 2.5px solid var(--danger); background: color-mix(in srgb, var(--danger) 18%, transparent); }
 .cell.wrong::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: var(--danger); animation: glow 0.9s ease-out forwards; pointer-events: none; }
-.cell.hinted::before { content: ''; position: absolute; inset: 0; border-radius: inherit; background: #fff; animation: glow 1.1s ease-out; pointer-events: none; }
+.cell.hinted::before { content: ''; position: absolute; inset: 0; border-radius: inherit; background: #fff; animation: glow 1.1s ease-out forwards; pointer-events: none; }
 .cat-board.solved .cell[data-m="2"] .mark svg { animation: hop .6s ease-in-out 2; }
 .loading { color: var(--muted); font-family: var(--display); font-size: 1.1rem; animation: breathe 1.2s ease-in-out infinite; }
 
@@ -167,7 +167,7 @@ svg { display: block; width: 100%; height: 100%; }
 .sdk-cell.same { background: color-mix(in srgb, var(--haze) 32%, var(--surface)); }
 .sdk-cell.sel { background: color-mix(in srgb, var(--haze) 55%, var(--surface)); }
 .sdk-cell.wrong { color: var(--danger); }
-.sdk-cell.hinted::before { content: ''; position: absolute; inset: 0; background: #fff; animation: glow 1.1s ease-out; pointer-events: none; }
+.sdk-cell.hinted::before { content: ''; position: absolute; inset: 0; background: #fff; animation: glow 1.1s ease-out forwards; pointer-events: none; }
 .sdk-board.solved .sdk-cell { animation: pop .5s ease-out; }
 .notes { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; height: 100%; padding: 6%; }
 .notes i { font-style: normal; font-family: var(--body); font-weight: 800; font-size: calc(100cqi / 9 * .22); color: var(--muted); display: grid; place-items: center; line-height: 1; }

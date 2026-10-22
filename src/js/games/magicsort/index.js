@@ -228,7 +228,11 @@ function mount(root, { exit }) {
     }
     if (!solved(tubes, puz.cap) && solve(tubes, puz.cap, 40000) === null) {
       render([a, b]);
+      busy = true;
+      const my = token;
       setTimeout(() => {
+        if (my !== token) return;
+        busy = false;
         const prev = history.pop();
         tubes = prev.tubes;
         hidden = hidden.map((n, i) => Math.min(n, prev.hidden[i]));
