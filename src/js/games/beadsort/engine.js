@@ -60,6 +60,36 @@ export function lift(st, i, cap) {
   return true;
 }
 
+export function group(goal, board, i, test, limit) {
+  const { w } = goal, out = [i], seen = new Set(out);
+  for (let q = 0; q < out.length && out.length < limit; q++) {
+    const j = out[q], x = j % w;
+    for (const n of [j - w, j + w, x > 0 ? j - 1 : -1, x < w - 1 ? j + 1 : -1]) {
+      if (n < 0 || n >= board.length || seen.has(n) || !test(n)) continue;
+      seen.add(n);
+      out.push(n);
+      if (out.length >= limit) break;
+    }
+  }
+  return out;
+}
+
+export function liftGroup(goal, st, i, cap) {
+  const c = st.board[i];
+  if (c < 0 || c === goal.cells[i] || st.trays.length >= cap) return [];
+  const g = group(goal, st.board, i, (n) => st.board[n] === c && goal.cells[n] !== c, cap - st.trays.length);
+  g.forEach((n) => lift(st, n, cap));
+  return g;
+}
+
+export function placeGroup(goal, st, c, i) {
+  if (st.board[i] !== HOLE || goal.cells[i] !== c) return [];
+  const have = st.trays.filter((t) => t === c).length;
+  const g = have ? group(goal, st.board, i, (n) => st.board[n] === HOLE && goal.cells[n] === c, have) : [];
+  g.forEach((n) => place(goal, st, st.trays.indexOf(c), n));
+  return g;
+}
+
 export function place(goal, st, k, i) {
   if (st.board[i] !== HOLE || st.trays[k] !== goal.cells[i]) return false;
   st.board[i] = st.trays[k];

@@ -3,7 +3,7 @@ import { haptic } from '../../core/native.js';
 import { h, toast } from '../../core/ui.js';
 import { createShell, TIER_LABEL } from '../../core/shell.js';
 import { stats } from '../../core/stats.js';
-import { ART, SLOTS, HOLE, target, lift, place, settle, jammed, unjam, solved, correct, total, bestLift } from './engine.js';
+import { ART, SLOTS, HOLE, target, liftGroup, placeGroup, settle, jammed, unjam, solved, correct, total, bestLift } from './engine.js';
 import { buildLevel } from './levels.js';
 
 const shade = (hex) => (parseInt(hex.slice(1, 3), 16) + parseInt(hex.slice(3, 5), 16) + parseInt(hex.slice(5, 7), 16) < 90 ? 'var(--bead-k)' : hex);
@@ -20,10 +20,10 @@ const bulb = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 17 H15 M10
 
 const rules = `<ul class="rules">
   <li><span class="rule-ic">${art}</span><span><b>The picture is scrambled.</b> Rebuild it to match the small preview.</span></li>
-  <li><span class="rule-ic">${art}</span><span><b>Tap a bead</b> to lift it into the trays. Then tap a color in the trays and the empty spots that need it.</span></li>
+  <li><span class="rule-ic">${art}</span><span><b>Tap a bead</b> to lift it and its touching beads of the same color into the trays. Then tap a color in the trays and an empty spot: the touching spots that need it fill too.</span></li>
   <li><span class="rule-ic">${clock}</span><span><b>Beat the clock.</b> Finish the picture before the timer runs out. There are no lives here.</span></li>
 </ul>
-<p class="sheet-note">Empty spots show a ring in the color they need. If the trays fill up with beads that fit nowhere, they go back to the picture. Hints: show a bead, auto-place, and freeze the timer for 20 seconds.</p>`;
+<p class="sheet-note">The finished picture shows faintly under the beads, so empty spots show the color they need. If the trays fill up with beads that fit nowhere, they go back to the picture. Hints: show a bead, auto-place, and freeze the timer for 20 seconds.</p>`;
 
 const load = () => ({ level: 1, board: null, trays: [], solved: 0, left: null, ...store.get('beadsort', {}) });
 const save = (s) => store.set('beadsort', s);
@@ -92,7 +92,7 @@ function mount(root, { exit }) {
       goalSvg.innerHTML = Array.from(goal.cells).map((c, i) => (c >= 0 ? `<rect x="${i % goal.w}" y="${Math.floor(i / goal.w)}" width="1.02" height="1.02" style="fill:${colors[c]}"/>` : '')).join('');
       board.style.setProperty('--w', goal.w);
       board.style.setProperty('--h', goal.h);
-      board.replaceChildren(...Array.from(goal.cells).map((c, i) => h(`<span class="bead${c < 0 ? ' off' : ''}" data-i="${i}"></span>`)));
+      board.replaceChildren(...Array.from(goal.cells).map((c, i) => h(`<span class="bead${c < 0 ? ' off' : ''}" data-i="${i}"${c >= 0 ? ` style="--goal:${colors[c]}"` : ''}></span>`)));
       beadEls = [...board.children];
       render();
       shell.loading(false);
@@ -107,8 +107,7 @@ function mount(root, { exit }) {
       if (goal.cells[i] < 0) return;
       const el = beadEls[i];
       el.classList.toggle('hole', c === HOLE);
-      el.style.background = c >= 0 ? colors[c] : '';
-      el.style.setProperty('--goal', colors[goal.cells[i]]);
+      el.style.setProperty('--bead', c >= 0 ? colors[c] : 'transparent');
     });
     flash.forEach((i) => {
       beadEls[i].classList.remove(cls);
@@ -167,15 +166,16 @@ function mount(root, { exit }) {
         toast('That spot needs another color');
         return wrongSpot(i);
       }
-      place(goal, st, st.trays.indexOf(sel), i);
+      const placed = placeGroup(goal, st, sel, i);
       if (!st.trays.includes(sel)) sel = -1;
       haptic.place();
-      return render([i]);
+      return render(placed);
     }
+    if (st.board[i] === goal.cells[i]) return;
     if (st.trays.length >= cap) return toast('The trays are full');
-    lift(st, i, cap);
+    const lifted = liftGroup(goal, st, i, cap);
     haptic.tap();
-    render(hinted ? [i] : []);
+    render(hinted ? lifted : []);
     if (jammed(goal, st, cap)) {
       setTimeout(() => {
         const back = unjam(st);
