@@ -3,11 +3,13 @@ import { haptic } from '../../core/native.js';
 import { h, toast } from '../../core/ui.js';
 import { createShell, TIER_LABEL, LIVES } from '../../core/shell.js';
 import { stats } from '../../core/stats.js';
-import { canPour, pour, solve, solved } from './engine.js';
+import { canPour, pour, runLength, solve, solved } from './engine.js';
 import { buildLevel } from './levels.js';
 
 const COLORS = [0, 1, 3, 4, 8, 9, 5, 7, 10, 11, 2, 13, 6, 12, 14];
 const color = (c) => `var(--p${COLORS[c]})`;
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
+const done = (a) => a.finished.catch(() => {});
 
 const tubeSvg = (fills) => `<svg viewBox="0 0 40 40" aria-hidden="true">
   ${[8, 17, 26].map((x, k) => `<g>
@@ -25,7 +27,7 @@ const rules = `<ul class="rules">
   <li><span class="rule-ic">${art}</span><span><b>Pour onto the same color</b> or into an empty tube, as long as there's room.</span></li>
   <li><span class="rule-ic rule-num">3</span><span><b>You have 3 lives.</b> A pour that leaves no way to finish costs one and is taken back.</span></li>
 </ul>
-<p class="sheet-note">Tap a tube to pick it up, then tap where to pour. Layers marked ? stay hidden until they reach the top. Undo is free; you can add one extra empty tube per level.</p>`;
+<p class="sheet-note">Tap a tube to pick it up, then tap where to pour. Layers marked ? stay hidden until they reach the top. A tube filled with one color gets a cap and stays put. Undo is free; you can add one extra empty tube per level.</p>`;
 
 const load = () => ({ lives: LIVES, ...store.get('magicsort', { level: 1, tubes: null, solved: 0, seenRules: false }) });
 const save = (s) => store.set('magicsort', s);
@@ -43,8 +45,14 @@ export default {
 function mount(root, { exit }) {
   const saved = load();
   let puz, tubes, hidden, extra, sel = -1, history = [];
+  let busy = false, token = 0, pouring = null, lastCapped = null, fly = null;
 
   const reset = () => {
+    token++;
+    busy = false;
+    pouring = null;
+    lastCapped = null;
+    fly?.remove();
     tubes = puz.tubes.map((t) => t.slice());
     hidden = puz.hidden.slice();
     extra = false;
@@ -101,13 +109,26 @@ function mount(root, { exit }) {
     const n = tubes.length, perRow = n <= 6 ? n : Math.ceil(n / 2);
     rack.style.setProperty('--per-row', perRow);
     rack.style.setProperty('--cap', puz.cap);
+    const capped = new Set(tubes.map((t, i) => (isCapped(i) ? i : -1)).filter((i) => i >= 0));
+    capped.forEach((i) => { hidden[i] = 0; });
+    const fresh = lastCapped ? [...capped].filter((i) => !lastCapped.has(i)) : [];
+    if (!pouring || pouring.n === undefined) {
+      if (fresh.length) haptic.tap();
+      lastCapped = capped;
+    }
     rack.replaceChildren(...tubes.map((t, i) => {
-      const el = h(`<button class="tube" data-i="${i}" aria-label="Tube ${i + 1}: ${t.length ? t.length + ' layers' : 'empty'}"><span class="glass"></span></button>`);
+      const el = h(`<button class="tube" data-i="${i}" aria-label="Tube ${i + 1}: ${capped.has(i) ? 'finished' : t.length ? t.length + ' layers' : 'empty'}"><span class="glass"></span></button>`);
       el.classList.toggle('sel', i === sel);
-      el.classList.toggle('full', t.length === puz.cap && t.every((c) => c === t[0]));
+      el.classList.toggle('full', capped.has(i));
+      if (capped.has(i) && !(pouring && pouring.b === i && pouring.n !== undefined)) {
+        el.style.setProperty('--cc', color(t[0]));
+        el.prepend(h(`<span class="cap${fresh.includes(i) ? ' cap-new' : ''}"></span>`));
+      }
+      if (pouring?.a === i) el.classList.add('away');
       if (flash.includes(i)) el.classList.add('hinted');
-      el.firstChild.append(...t.map((c, j) => {
-        const s = h('<span class="seg"></span>');
+      const fillFrom = pouring?.b === i && pouring.n !== undefined ? t.length - pouring.n : Infinity;
+      el.lastChild.append(...t.map((c, j) => {
+        const s = h(`<span class="seg${j >= fillFrom ? ' in' : ''}"></span>`);
         if (j < hidden[i]) {
           s.classList.add('mystery');
           s.textContent = '?';
@@ -120,7 +141,7 @@ function mount(root, { exit }) {
     tools.querySelector('[data-tool="tube"]').disabled = extra;
     Object.assign(saved, { tubes, hidden, extra });
     save(saved);
-    if (!shell.won && solved(tubes, puz.cap)) win();
+    if (!pouring && !shell.won && solved(tubes, puz.cap)) win();
   }
 
   function snapshot() {
@@ -138,10 +159,73 @@ function mount(root, { exit }) {
     render();
   }
 
-  function move(a, b, flash = []) {
-    snapshot();
+  function isCapped(i) {
+    const t = tubes[i];
+    return t.length === puz.cap && t.every((c) => c === t[0]);
+  }
+
+  async function animatePour(a, b, n, c) {
+    const my = token;
+    const src = rack.children[a], dst = rack.children[b];
+    const sg = src.querySelector('.glass').getBoundingClientRect();
+    const dg = dst.querySelector('.glass').getBoundingClientRect();
+    const segH = src.querySelector('.seg').getBoundingClientRect().height;
+    fly = h(`<div class="ms-fly"></div>`);
+    const glass = src.querySelector('.glass').cloneNode(true);
+    Object.assign(fly.style, { left: `${sg.left}px`, top: `${sg.top}px`, width: `${sg.width}px`, height: `${sg.height}px`, transformOrigin: '50% 0' });
+    fly.style.setProperty('--seg', `${segH}px`);
+    fly.append(glass);
+    document.body.append(fly);
+    src.style.visibility = 'hidden';
+    const right = dg.left + dg.width / 2 > sg.left + sg.width / 2;
+    const tx = dg.left + dg.width / 2 - (sg.left + sg.width / 2) + (right ? -1 : 1) * dg.width * 0.18;
+    const gap = segH * 0.9;
+    const ty = dg.top - gap - sg.top;
+    const tilt = `translate(${tx}px, ${ty}px) rotate(${right ? 96 : -96}deg)`;
+    const T = { move: 240, pour: Math.min(520, 220 + n * 90), back: 220 };
+    await done(fly.animate([{ transform: 'none' }, { transform: tilt }], { duration: T.move, easing: 'ease-in-out', fill: 'forwards' }));
+    if (my !== token) return false;
+
     pour(tubes, puz.cap, a, b);
+    pouring = { a, b, n };
+    rack.style.setProperty('--pour', `${T.pour}ms`);
+    render();
+    const after = tubes[b].length;
+    const stream = h('<span class="ms-stream"></span>');
+    const sx = dg.left + dg.width / 2 + (right ? -1 : 1) * dg.width * 0.18;
+    Object.assign(stream.style, {
+      left: `${sx - Math.max(3, segH * 0.14)}px`, top: `${dg.top - gap}px`, width: `${Math.max(6, segH * 0.28)}px`,
+      height: `${Math.max(8, dg.height - after * segH + gap)}px`, background: color(c),
+    });
+    document.body.append(stream);
+    stream.animate([{ transform: 'scaleY(0)' }, { transform: 'scaleY(1)', offset: 0.2 }, { transform: 'scaleY(1)', opacity: 1, offset: 0.85 }, { transform: 'scaleY(1)', opacity: 0 }], { duration: T.pour, fill: 'forwards' });
+    [...glass.querySelectorAll('.seg')].slice(-n).forEach((el) => el.animate([{ height: `${segH}px` }, { height: '0px' }], { duration: T.pour, easing: 'linear', fill: 'forwards' }));
+    await new Promise((r) => setTimeout(r, T.pour));
+    stream.remove();
+    if (my !== token) return false;
+
+    pouring = { a };
+    render();
+    glass.replaceChildren(...rack.children[a].querySelector('.glass').cloneNode(true).childNodes);
+    await done(fly.animate([{ transform: tilt }, { transform: 'none' }], { duration: T.back, easing: 'ease-in-out', fill: 'forwards' }));
+    fly.remove();
+    fly = null;
+    if (my !== token) return false;
+    pouring = null;
+    return true;
+  }
+
+  async function move(a, b, flash = []) {
+    snapshot();
     sel = -1;
+    if (reduceMotion.matches) pour(tubes, puz.cap, a, b);
+    else {
+      busy = true;
+      const n = Math.min(runLength(tubes[a]), puz.cap - tubes[b].length);
+      const ok = await animatePour(a, b, n, tubes[a][tubes[a].length - 1]);
+      busy = false;
+      if (!ok) return;
+    }
     if (!solved(tubes, puz.cap) && solve(tubes, puz.cap, 40000) === null) {
       render([a, b]);
       setTimeout(() => {
@@ -197,27 +281,28 @@ function mount(root, { exit }) {
 
   rack.addEventListener('click', (e) => {
     const t = e.target.closest('.tube');
-    if (!t || shell.won) return;
+    if (!t || shell.won || busy) return;
     const i = +t.dataset.i;
+    const pickable = tubes[i].length && !isCapped(i);
     if (sel < 0) {
-      if (tubes[i].length) { sel = i; haptic.tap(); render(); }
+      if (pickable) { sel = i; haptic.tap(); render(); }
     } else if (sel === i) {
       sel = -1;
       render();
     } else if (canPour(tubes, puz.cap, sel, i)) {
       move(sel, i);
     } else {
-      sel = tubes[i].length ? i : -1;
+      sel = pickable ? i : -1;
       haptic.tap();
       render();
     }
   });
   tools.addEventListener('click', (e) => {
     const t = e.target.closest('[data-tool]')?.dataset.tool;
-    if (!t || shell.won || !puz) return;
+    if (!t || shell.won || !puz || busy) return;
     ({ undo, tube: addTube, hint })[t]();
   });
 
   startLevel();
-  return { destroy: () => shell.el.remove() };
+  return { destroy: () => { token++; fly?.remove(); shell.el.remove(); } };
 }
