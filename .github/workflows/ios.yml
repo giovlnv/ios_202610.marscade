@@ -1,4 +1,4 @@
-name: Build iOS (unsigned IPA for AltStore)
+name: Build iOS (unsigned IPA)
 
 on:
   workflow_dispatch:

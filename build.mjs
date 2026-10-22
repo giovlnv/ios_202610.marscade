@@ -1,7 +1,9 @@
 import * as esbuild from 'esbuild';
 import { cpSync, rmSync, mkdirSync } from 'node:fs';
+import { execSync } from 'node:child_process';
 
 const serve = process.argv.includes('--serve');
+const build = process.env.MARSCADE_BUILD || execSync('git log -1 --format=%ct').toString().trim();
 rmSync('www', { recursive: true, force: true });
 mkdirSync('www');
 for (const p of ['index.html', 'css', 'fonts']) cpSync(`src/${p}`, `www/${p}`, { recursive: true });
@@ -14,6 +16,7 @@ const options = {
   outdir: 'www',
   minify: !serve,
   sourcemap: serve,
+  define: { BUILD: build },
 };
 
 if (serve) {
@@ -23,5 +26,5 @@ if (serve) {
   console.log(`Marscade running at http://localhost:${port} (open your PC's IP on the same Wi-Fi to test on iPhone)`);
 } else {
   await esbuild.build(options);
-  console.log('Built to www/');
+  console.log(`Built to www/ (build ${build})`);
 }

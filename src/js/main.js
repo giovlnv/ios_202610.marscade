@@ -4,6 +4,7 @@ import { settings, apply as applySettings } from './core/settings.js';
 import { stats } from './core/stats.js';
 import { TIER_LABEL } from './core/shell.js';
 import { games, upcoming } from './games/index.js';
+import { startOta } from './core/ota.js';
 
 const app = document.getElementById('app');
 let current = null;
@@ -127,4 +128,5 @@ initStore().then(() => {
   applySettings();
   const last = store.get('last', null);
   last ? open(last) : home();
+  startOta();
 });

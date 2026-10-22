@@ -1,7 +1,7 @@
 # Marscade
 
 One iPhone app for all my puzzle games. Fully offline, no ads, no timers.
-Built with plain JavaScript, wrapped with Capacitor, compiled by GitHub Actions and installed with AltStore.
+Built with plain JavaScript, wrapped with Capacitor, compiled by GitHub Actions, installed with [Marsign](https://github.com/giovlnv/windows_202610.marsign) and updated over the air.
 
 ## Games
 
@@ -27,7 +27,19 @@ Open http://localhost:8000. To try it on the iPhone before building, open `http:
 
 `npm test` checks that Catnap and Sudoku levels each have exactly one solution, that Magic Sort levels can be finished, that Word Search levels build in both languages, that Bead Sort levels can be cleared, and that Arrow Go levels can be emptied.
 
-## Put it on the iPhone
+## Updates over the air
+
+Every push to `main` runs **Publish OTA update**: it tests, builds, zips `www/` and publishes it with `latest.json` on the `ota` branch.
+When Marscade opens or comes back to the front, it checks `latest.json`, downloads a newer bundle in the background and switches to it the next time the app goes to the background. Nothing to install.
+
+- It uses [@capgo/capacitor-updater](https://github.com/Cap-go/capacitor-updater) (MPL-2.0) in self-hosted mode, with Capgo's cloud and stats turned off.
+- The build number is the commit time, so the app only takes bundles newer than itself.
+- If a new bundle fails to start, the plugin rolls back to the previous one.
+- Native changes (a new plugin, the icon, a Capacitor upgrade) still need a new `.ipa`. Installing a new `.ipa` clears old downloaded bundles.
+
+## Put a new .ipa on the iPhone
+
+Only needed for native changes.
 
 1. Push your changes to `main`.
 2. Start a build by pushing `main` to the `release` branch:
@@ -35,8 +47,8 @@ Open http://localhost:8000. To try it on the iPhone before building, open `http:
    git push origin main:release
    ```
    (or run **Actions → Build iOS → Run workflow** on GitHub).
-3. When the build finishes (about 10 minutes), open the repo's **Releases** page on the iPhone and download `Marscade.ipa` from the newest release.
-4. Open the file with AltStore.
+3. When the build finishes (about 10 minutes), download `Marscade.ipa` from the newest release on the repo's **Releases** page.
+4. Install it with Marsign: `py marsign.py install Marscade.ipa`. Marsign's weekly refresh keeps the app and its downloaded updates.
 
 Bump `version` in `package.json` when you want a new version number. Your progress is kept when you install a new version over the old one.
 
