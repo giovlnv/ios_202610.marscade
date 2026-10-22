@@ -100,6 +100,13 @@ From the App Store screenshots: interlocked C-shaped rings, each with a gap. Rot
 - 3 lives per level in every game; Catnap cats are final
 - One-tap Restart button with a label (keeps remaining lives)
 - Bead Sort pictures from free pixel art (CC0) and an archive of 52 public-domain paintings on hard levels
+- Over-the-air updates: pushes to `main` reach the app without reinstalling (installed with Marsign)
+- Magic Sort pour animation, and caps on tubes filled with one color
+- Bead Sort lifts and places touching beads of one color together; the finished picture shows under the board
+
+## Paused
+
+- Batch 1 of the Easy games (Word Guess, 2048, Minesweeper), paused for a bug hunt
 
 ## Proposals waiting for your approval
 
