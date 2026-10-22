@@ -102,7 +102,7 @@ From the App Store screenshots: interlocked C-shaped rings, each with a gap. Rot
 - Bead Sort pictures from free pixel art (CC0) and an archive of 52 public-domain paintings on hard levels
 - Over-the-air updates: pushes to `main` reach the app without reinstalling (installed with Marsign)
 - Magic Sort pour animation, and caps on tubes filled with one color
-- Bead Sort lifts and places touching beads of one color together; the finished picture shows under the board
+- Bead Sort reworked from the Color Sort Jewel video: beads fly to their spots, one-color swatch trays, placed beads lie flat, block scrambles
 
 ## Paused
 
@@ -110,4 +110,4 @@ From the App Store screenshots: interlocked C-shaped rings, each with a gap. Rot
 
 ## Proposals waiting for your approval
 
-Nothing pending right now.
+- Bead Sort third tray as a once-per-level hint (the original unlocks it with an ad)
