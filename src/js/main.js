@@ -4,7 +4,7 @@ import { settings, apply as applySettings } from './core/settings.js';
 import { stats } from './core/stats.js';
 import { TIER_LABEL } from './core/shell.js';
 import { games, upcoming } from './games/index.js';
-import { startOta } from './core/ota.js';
+import { startOta, ota, buildLabel } from './core/ota.js';
 
 const app = document.getElementById('app');
 let current = null;
@@ -22,6 +22,7 @@ function settingsSheet() {
       <div class="setting"><span>Vibration</span>${seg('haptics', [[true, 'On'], [false, 'Off']])}</div>
       <div class="setting"><span>Appearance</span>${seg('theme', [['system', 'Auto'], ['light', 'Light'], ['dark', 'Dark']])}</div>
       <div class="setting"><span>Word games</span>${seg('lang', [['en', 'English'], ['pt', 'Português']])}</div>
+      <p class="version">Version ${VERSION} · update ${buildLabel()}<br><small data-ota></small></p>
       <button class="primary" data-close>Done</button>
     </div>
   </div>`;
@@ -91,7 +92,10 @@ function hub() {
   el.append(sheets);
   el.addEventListener('click', (e) => {
     const open = e.target.closest('[data-open]')?.dataset.open;
-    if (open) el.querySelector(`[data-sheet="${open}"]`).hidden = false;
+    if (open) {
+      el.querySelector(`[data-sheet="${open}"]`).hidden = false;
+      el.querySelector('[data-ota]').textContent = ota.status;
+    }
     const back = e.target.closest('[data-sheet]');
     if (back && (e.target === back || e.target.closest('[data-close]'))) back.hidden = true;
     const opt = e.target.closest('.seg-ctl [data-v]');

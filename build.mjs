@@ -1,5 +1,5 @@
 import * as esbuild from 'esbuild';
-import { cpSync, rmSync, mkdirSync } from 'node:fs';
+import { cpSync, rmSync, mkdirSync, readFileSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 
 const serve = process.argv.includes('--serve');
@@ -16,7 +16,7 @@ const options = {
   outdir: 'www',
   minify: !serve,
   sourcemap: serve,
-  define: { BUILD: build },
+  define: { BUILD: build, VERSION: JSON.stringify(JSON.parse(readFileSync('package.json', 'utf8')).version) },
 };
 
 if (serve) {
