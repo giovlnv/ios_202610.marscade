@@ -16,7 +16,7 @@ const rules = `<ul class="rules">
   <li><span class="rule-ic">${catSvg}</span><span><b>One cat per row and column.</b></span></li>
   <li><span class="rule-ic">${catSvg}</span><span><b>Cats need their space.</b> No two cats may touch, not even diagonally.</span></li>
 </ul>
-<p class="sheet-note">Tap a square once for an X, twice for a cat. A placed cat stays put, and a wrong cat costs one of your 3 lives. Drag across squares to mark or clear several X's at once.</p>`;
+<p class="sheet-note">Tap a square for an X and tap the X again to clear it. Double-tap a square for a cat. A placed cat stays put, and a wrong cat costs one of your 3 lives. Drag across squares to mark or clear several X's at once.</p>`;
 
 export default {
   id: 'catnap',
@@ -210,7 +210,7 @@ function mount(root, { exit }) {
     if (hinted) flash(i);
   }
 
-  let drag = null;
+  let drag = null, lastTap = { i: -1, t: 0 };
   const cellAt = (e) => {
     const t = document.elementFromPoint(e.clientX, e.clientY)?.closest('.cell');
     return t && board.contains(t) ? +t.dataset.i : -1;
@@ -233,7 +233,11 @@ function mount(root, { exit }) {
   });
   board.addEventListener('pointerup', () => {
     if (!drag) return;
-    if (!drag.moved && marks[drag.start] !== CAT) setMark(drag.start, marks[drag.start] + 1);
+    if (!drag.moved && marks[drag.start] !== CAT) {
+      const i = drag.start, now = Date.now(), twice = lastTap.i === i && now - lastTap.t < 350;
+      lastTap = twice ? { i: -1, t: 0 } : { i, t: now };
+      setMark(i, twice ? CAT : marks[i] === X ? EMPTY : X);
+    }
     drag = null;
   });
   board.addEventListener('pointercancel', () => { drag = null; });
